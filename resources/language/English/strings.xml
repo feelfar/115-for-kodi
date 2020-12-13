@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<strings>
+    <!-- Plugin settings strings -->
+    <string id="101">通知延时</string>
+    <string id="102">在播放时隐藏进度条</string>
+    <string id="103">rtmpdump程序位置</string>
+    <string id="104">vlc程序位置</string>
+    <string id="105">mplayer程序位置</string>
+
+    <!-- messages -->
+    <string id="201">准备下载</string>
+    <string id="202">下载中</string>
+    <string id="203">下载完成</string>
+    <string id="204">下载失败</string>
+    <string id="205">开始下载</string>
+    <string id="206">删除下载</string>
+    <string id="207">错误</string>
+    <string id="208">错误</string>
+
+    <!-- errors -->
+    <string id="301">错误</string>
+    <string id="302">vlc/mplayer/rtmpdump 程序未找到</string>
+
+    <string id="30100">开始队列</string>
+    <string id="30102">停止队列</string>
+    <string id="30200">设置</string>
+    
+</strings>

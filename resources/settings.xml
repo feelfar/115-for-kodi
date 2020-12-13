@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<settings>
+  <!-- General -->
+  <category label="设置">
+	<!-- 
+	<setting id="serverchange" type="enum" label="源码播放线路选择" values="不替换|每次提示-全部线路|每次提示-电信线路|每次提示-联通线路|每次提示-长宽线路|每次提示-移动线路|替换为电信-cdntel|替换为电信-vipcdntel|替换为电信-mzvipcdntel|替换为电信-fscdntel|替换为电信-mzcdntel|替换为联通-cdnuni|替换为联通-vipcdnuni|替换为联通-mzvipcdnuni|替换为联通-fscdnuni|替换为联通-mzcdnuni|替换为长宽-cdngwbn|替换为长宽-vipcdngwbn|替换为长宽-mzvipcdngwbn|替换为长宽-mzcdngwbn|替换为长宽-cdnogwbn|替换为移动-cdnctt|替换为移动-vipcdnctt|替换为移动-mzvipcdnctt" default="0"/>
+	 -->
+	<setting id="subtitle" type="bool" label="站内字幕" default="true"/>
+	<setting id="resolution" type="enum" label="清晰度" values="每次提示|普清|高清|超清|1080p|4K|原画|原码" default="0"/>
+	<setting id="playmode" type="enum" label="原码播放方式" values="代理方式（默认）|直连方式（基本已废）" default="0"/>
+	<setting id="proxyserver" type="text" label="播放代理地址" default="127.0.0.1:6227" />
+	<setting id="dbdeftag" type="text" label="豆瓣自定义标签" default="1994,周星驰" />
+  </category>
+  <category label="显示设置">
+	<setting id="videoext" type="text" label="视频文件扩展名" default="mkv,mp4,m4v,mov,flv,wmv,asf,avi,m2ts,mts,m2t,ts,mpg,mpeg,3gp,rmvb,rm,iso"/>
+	<setting id="musicext" type="text" label="音乐文件扩展名" default="wav,flac,mp3,ogg,m4a,ape,dff,dsf,wma,ra"/>
+	<setting id="imageext" type="text" label="图像文件扩展名" default="jpg,jpeg,bmp,tif,tiff,png,gif"/>
+	<setting id="showallfiles" type="bool" label="显示所有文件"  default="false"/>
+	<setting id="pageitem" type="enum" label="页面项目数" values="25|50|100" default="2"/>
+	<setting id="buildinkb" type="bool" label="使用内置键盘"  default="true"/>
+	<setting id="btmaxresult" type="enum" label="磁力搜索返回记录数" values="20|40|60|80|100" default="3"/>
+  </category>    
+  <category label="其它设置">
+	<setting id="javbus" type="bool" label="启用Javbus" default="true"/>
+	<setting id="javbusfb" type="text" label="Javbus防屏蔽网址" default="https://www.dmmbus.bid;https://www.seedmm.life;https://www.cdnbus.icu;https://www.dmmsee.work;https://www.busjav.work;"/>
+	<setting id="javbusom" type="text" label="Javbus好雷屋网址" default="https://www.javbus.zone"/>
+	<setting id="panedit" type="bool" label="启用网盘删移改功能" default="false"/>
+	<setting id="genm3u8" type="bool" label="批量生成M3U8" default="false"/>
+	<setting id="milkvr" type="bool" label="启用MilkVR" default="false"/>
+	
+  </category>  
+</settings>
+
+
