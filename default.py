@@ -545,10 +545,16 @@ wlHF+mkTJpKd5Wacef0vV+xumqNorvLpIXWKwxNaoHM=
 		if withcookie:
 			cookies=''
 			try:
-				for k,v in self.cookiejar._cookies['.115.com']['/'].items():
-					cookies+=str(k)+'='+str(v.value)+';'
-				cookies+=self.downcookie+';'
-			except:
+				if self.cookiejar._cookies.has_key('.115.com'):
+					for k,v in self.cookiejar._cookies['.115.com']['/'].items():
+						cookies+=str(k)+'='+str(v.value)+';'
+					cookies+=self.downcookie+';'
+				if self.cookiejar._cookies.has_key('115.com'):
+					for k,v in self.cookiejar._cookies['115.com']['/'].items():
+						cookies+=str(k)+'='+str(v.value)+';'
+					cookies+=self.downcookie+';'
+			except Exception, e:
+				plugin.log.error('zzzdebug:%s'%e)
 				os.remove(cookiefile)
 			#return result+'|Cookie='+cookies
 			#return result+'&'+cookies
