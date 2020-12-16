@@ -560,6 +560,8 @@ wlHF+mkTJpKd5Wacef0vV+xumqNorvLpIXWKwxNaoHM=
 			#return result+'&'+cookies
 			headers=self.headers.copy()
 			headers.update({'Cookie':cookies})
+			headers.update({'User-Agent':'Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2; Trident/6.0)'})
+			headers.update({'Referer': 'https://115.com/?cid=0&offset=0&mode=wangpan'})
 			result=result+'|'+urllib.urlencode(headers)
 		#plugin.log.error(result)
 		return result
