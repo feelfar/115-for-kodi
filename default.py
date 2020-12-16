@@ -92,7 +92,7 @@ class api_115(object):
 	bad_servers = ['fscdnuni-vip.115.com', 'fscdntel-vip.115.com','cdnuni.115.com']
 	is_vip=0
 	user_name=''
-	
+	downcookie=''
 	def __init__(self, cookiefile):
 		
 		self.cookiejar = cookielib.LWPCookieJar()
