@@ -106,7 +106,8 @@ class api_115(object):
 		except:
 			os.remove(cookiefile)
 		self.headers = {
-			'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.109 Safari/537.36',
+			#'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.109 Safari/537.36',
+			'User-Agent': 'Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2; Trident/6.0)',
 			'Accept-encoding': 'gzip,deflate',
 		}
 
@@ -507,7 +508,8 @@ wlHF+mkTJpKd5Wacef0vV+xumqNorvLpIXWKwxNaoHM=
 		return self.m115_sym_decode(bsrc2, len(tmp) - 16, bkey1,bkey2)
 		
 	def getfiledownloadurl(self,pc,changeserver='',withcookie=False):
-		tm = str((int(long(time.time()))))
+		#tm = str((int(long(time.time())/100000)*100000))
+		tm = str(int(long(time.time())))
 		pcencode = self.m115_encode((json.dumps({'pickcode': pc})).replace(' ',''),tm)
 		
 		data=self.urlopen('http://proapi.115.com/app/chrome/downurl?t='+tm,data=urllib.urlencode({'data':pcencode['data']}))
