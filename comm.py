@@ -41,7 +41,7 @@ ALL_VIEW_CODES = {
 		'skin.aeon.nox': 500, # Wall
 		'skin.droid': 51, # Big icons
 		'skin.quartz': 51, # Big icons
-		'skin.re-touched': 500, #Thumbnail
+		'skin.re-touched': 500, #re-touched
 		'skin.confluence-vertical': 500,
 		'skin.jx720': 52,
 		'skin.pm3-hd': 53,

@@ -3,9 +3,12 @@
 
 import xbmc,xbmcgui,os,sys,re,time,urllib,json
 import comm
+import HTMLParser
 plugin = comm.plugin
 setthumbnail=comm.setthumbnail
 __cwd__=comm.__cwd__
+__resource__   = xbmc.translatePath( os.path.join( __cwd__, 'resources' ))
+IMAGES_PATH = xbmc.translatePath(os.path.join(__resource__, 'media'))
 keyboard=comm.keyboard
 _http=comm._http
 colorize_label=comm.colorize_label
@@ -28,7 +31,7 @@ def dbplaytrailer(movid):
 	except:
 		return
 	
-
+'''
 @plugin.route('/dbtrailer')
 def dbtrailer():
 	menus=[]
@@ -50,7 +53,69 @@ def dbtrailer():
 		i+=1
 	setthumbnail['set']=True
 	return menus
+'''
 
+@plugin.route('/dbclips/<subject>')
+def dbclips(subject):
+	rsp = _http('https://movie.douban.com/subject/%s/trailer#trailer'%subject,referer='https://www.douban.com/link2/')
+	rtxt=r'img\s+src\x3D\x22(?P<thumb>[^\s\x22\x3D]*?)\x22.*?\x3Cp\x3E\x3Ca\s+href\x3D\x22.*?trailer\x2F(?P<movid>.*?)\x2F.*?\x3E\s+(?P<movtitle>.*?)\s+\x3C\x2Fa'
+	menus=[]
+	for clip in re.finditer(rtxt, rsp, re.DOTALL):
+		#plugin.log.error(clip.group('thumb'))
+		movtitle=HTMLParser.HTMLParser().unescape(clip.group('movtitle'))
+		menus.append({'label':movtitle,
+				'path': plugin.url_for('dbplaytrailer',movid=clip.group('movid')),
+				'thumbnail': clip.group('thumb'),
+				'is_playable':True, 
+				'info_type':'video',
+				'info':{'title':movtitle}
+				})
+	plugin.set_content('movies')
+	setthumbnail['set']=True
+	
+	return menus
+
+@plugin.route('/dbphotos/<subject>/<pictype>/<page>')
+def dbphotos(subject,pictype='S',page=0):
+	pictypes={'R':'海报','S':'剧照','W':'壁纸'}
+	del pictypes[pictype]
+	menus=[]
+	for key in pictypes:
+		menus.append({'label':comm.colorize_label(pictypes[key],None,color='32FF94') ,
+					'path':  plugin.url_for('dbphotos', subject=subject,pictype=key,page=0),
+					'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'picture.png') ).decode('utf-8')})
+		
+	url='https://movie.douban.com/subject/%s/photos?type=%s&start=%d'%(subject,pictype,int(page)*30)
+	#plugin.log.error(url)
+	rsp = _http(url,referer='https://www.douban.com/link2/')
+	rtxt=r'\x3Cli.*?data\x2Did.*?img\s+src\x3D\x22(?P<imgurl>[^\s]*?)\x22.*?\x22name\x22\x3E(?P<imgname>.*?)\x3C'
+	for photo in re.finditer(rtxt, rsp, re.DOTALL):
+		resource_url=''
+		limg=photo.group('imgurl')
+		limg=limg.replace('/m/','/l/')
+		imgname=HTMLParser.HTMLParser().unescape(photo.group('imgname').strip())
+		menus.append({'label':imgname,
+				'path': plugin.url_for('showpic', imageurl=limg),
+				#'path':limg,
+				#'is_playable':True, 
+				#'info_type':'video',
+				'properties':{'mimetype':'image/jpeg'},
+				'thumbnail': photo.group('imgurl'),
+				})
+	m = re.search("\x22count\x22.*?(?P<count>[0-9]+)", rsp, re.DOTALL)
+	if m:
+		count =int( m.group('count'))
+		totalpage=int((count-1)/30)
+		if int(page)<totalpage:
+			menus.append({'label':'下一页','thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'nextpage.png') ).decode('utf-8'),
+					'path':  plugin.url_for('dbphotos', subject=subject,pictype=pictype,page=int(page)+1)})
+	
+	plugin.set_content('images')
+	setthumbnail['set']=True
+	#plugin.notify('dbphotos:'+subject)
+	return menus
+	
+	
 @plugin.route('/dbsummary/<summary>')
 def dbsummary(summary):
 	dialog = xbmcgui.Dialog()
@@ -75,28 +140,74 @@ def dbsubject(subject):
 def dbsubject(subject):
 	menus=[]
 	try:
-		rsp = _http('https://api.douban.com/v2/movie/subject/'+subject+'?apikey=0b2bdeda43b5688921839c8ecb20399b',referer='https://www.douban.com/link2/')
-		
-		#plugin.notify('ok')
-		rsp=rsp[rsp.index('{'):]
+		rsp = _http('https://movie.douban.com/subject/'+subject+'/',referer='https://www.douban.com/link2/')
+
 		#plugin.log.error(rsp)
-		minfo = json.loads(rsp[rsp.index('{'):])
+		year=title=title2=thumb=summary=''
 		
-		year=minfo['year']
+		m = re.search(r"title\x3E\s*(?P<title>.*?)\s*\x3C\x2Ftitle", rsp, re.DOTALL)
+		if m:
+			title = m.group("title")
+			title=title[0:title.index('(')].strip()
+			
+		rtxt = r'dale_movie_subject_top_icon.*?itemreviewed\x22\x3E(?P<title>.*?)\x3C.*?\x22year\x22\x3E(?P<year>.*?)\x3C.*?mainpic.*?img\s+src\x3D\x22(?P<thumb>.*?)\x22'
+		m = re.search(rtxt, rsp, re.DOTALL)
+		
+		if m:
+			year=m.group('year').strip(')(')
+			title2=HTMLParser.HTMLParser().unescape(m.group('title'))
+			title2=title2.replace(title,'').strip()
+			thumb=m.group('thumb')
+			
+		rtxt=r'summary.*?\x3E\s*(?P<summary>.*?)\s*\x3C'
+		m = re.search(rtxt, rsp, re.DOTALL)
+		if m:
+			summary=m.group('summary')
+		
+		rtxt=r'div\s+id\x3D\x22info\x22\x3E\s+(?P<info>.*?)\s+\x3C\x2Fdiv'
+		m = re.search(rtxt,rsp, re.DOTALL)
+		genres=[]
+		areas=[]
+		names=[]
+	   
+		if m:
+			info=m.group('info')
+			m = re.search(r'类型.*?(?P<strs>\x3Cspan.*?span\x3E\s*)\x3Cbr', info, re.DOTALL)
+			if m:
+				strs = m.group('strs')
+				for m in re.finditer("\x3E(?P<gen>[^\x3E\x3C]+?)\x3C\x2Fspan", strs, re.DOTALL):
+					genres.append(m.group('gen'))
+			m = re.search(r'制片国家.*?span\x3E\s*(?P<strs>.*?)\x3Cbr', info, re.DOTALL)
+			if m:
+				strs = m.group('strs')
+				for area in strs.split('/'):
+					areas.append(area.strip())
+			m = re.search(r'又名.*?span\x3E\s*(?P<strs>.*?)\x3Cbr', info, re.DOTALL)
+			if m:
+				strs = HTMLParser.HTMLParser().unescape(m.group('strs'))
+				for othtitle in strs.split('/'):
+					names.append(othtitle.strip())
+		celes=[]
+					
+		rtxt=r"avatar[^\n]*?background\x2Dimage[^\n]*?url\x28(?P<img>[^\x2C\s]*?)\x29\x22\x3E.*?celebrity\x2F(?P<id>[0-9]+)\x2F.*?name\x22\x3E(?P<name>.*?)\x3C\x2Fa\x3E.*?title\x3D\x22(?P<role>.*?)\x22\x3E"
+		for m in re.finditer(rtxt, rsp, re.DOTALL):
+			 celes.append({'id':m.group('id'),'name':m.group('name'),'img':m.group('img'),'role':m.group('role'),})
+			 
+		tags=[]
+		m = re.search("\x22tags-body\x22\x3E.*?\x3C\x2Fdiv\x3E", rsp, re.DOTALL)
+		if m:
+			tagsg = m.group()
+			for m in re.finditer("\x2Ftag\x2F.*?\x3E(?P<tag>.*?)\x3C", tagsg, re.DOTALL):
+				tags.append(m.group('tag'))
 		
 		comm.moviepoint['group']='db'
-		comm.moviepoint['title']=minfo['title']
-		comm.moviepoint['thumbnail']=minfo['images']['large'].decode('utf-8')
-		
-		#summary =''
-		#for s,i in enumerate(re.findall(ur'([^\n]{1,28})', minfo['summary'])):
-		#	summary=summary+i+'\r\n'
-		
-		
-		#xbmc.log(plugin.url_for('dbsummary', summary=minfo['summary'].encode('utf-8')))
-		menus.append({'label':'[COLOR FFFF2222]简介：[/COLOR]%s'%minfo['summary'].encode('utf-8'),
-					'path':  plugin.url_for('dbsummary', summary=minfo['summary'].encode('utf-8')),
-					'thumbnail':minfo['images']['large'].decode('utf-8')})
+		comm.moviepoint['title']=title
+		comm.moviepoint['thumbnail']=thumb
+
+		menus.append({'label':'[COLOR FFFF2222]简介：[/COLOR]%s'%summary,
+					'path':  plugin.url_for('dbsummary', summary=summary),
+					'thumbnail':thumb})
+		'''
 		clipandphotos['clips']=[]
 		clipandphotos['photos']=[]
 		if minfo.has_key('clips'):
@@ -107,23 +218,23 @@ def dbsubject(subject):
 		
 		if minfo.has_key('photos'):
 			clipandphotos['photos'].extend(minfo['photos'])
-		
+		'''
 
-		menus.append({'label':comm.colorize_label('预告片和图片',None,color='32FF94') ,
-					'path':  plugin.url_for('dbtrailer'),
-					'thumbnail':xbmc.translatePath( os.path.join( __cwd__, 'movies.png') ).decode('utf-8')})
+		menus.append({'label':comm.colorize_label('预告片',None,color='32FF94') ,
+					'path':  plugin.url_for('dbclips', subject=subject),
+					'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'movies.png') ).decode('utf-8')})
+		menus.append({'label':comm.colorize_label('剧照',None,color='32FF94') ,
+					'path':  plugin.url_for('dbphotos', subject=subject,pictype='S',page=0),
+					'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'picture.png') ).decode('utf-8')})
 		strlist=[]
-		strlist.append(minfo['title'])
-		strlist.append(minfo['title']+' '+year)
-		if minfo.has_key('original_title'):
-			#strlist.append(minfo['original_title'])
-			strlist.append(minfo['original_title']+' '+year)
-		if minfo.has_key('aka'):
-			for aka in minfo['aka']:
-				if aka.find('(')>=0 and  aka.find(')')>=0:
-					aka=aka.replace(aka[ aka.find('('):aka.find(')')+1],'')
-				#strlist.append(aka)
-				strlist.append(aka+' '+year)
+		strlist.append(title)
+		strlist.append(title+' '+year)
+		if title2!='':
+			strlist.append(title2+' '+year)
+		for aka in names:
+			if aka.find('(')>=0 and  aka.find(')')>=0:
+				aka=aka.replace(aka[ aka.find('('):aka.find(')')+1],'')
+			strlist.append(aka+' '+year)
 		#去重
 		news_strlist = list(set(strlist))
 		news_strlist.sort(key=strlist.index)
@@ -133,52 +244,35 @@ def dbsubject(subject):
 			context_menu_items.append(('搜索'+colorize_label(sstr.encode('UTF-8'), color='00FF00'), 
 				'RunPlugin('+plugin.url_for('searchinit',stypes='pan,bt',sstr=sstr.encode('UTF-8'),modify='1',otherargs='{}')+')',))
 			listitem=ListItem(label='BT:[COLOR FF00FFFF]%s[/COLOR]' % (sstr.encode('utf-8')),
-				label2=None, icon=None, thumbnail=xbmc.translatePath( os.path.join( __cwd__, 'magnet.jpg') ).decode('utf-8'),
+				label2=None, icon=None,
+				thumbnail=xbmc.translatePath( os.path.join( IMAGES_PATH, 'magnet.png') ).decode('utf-8'),
 				path=plugin.url_for('btsearchInit', sstr=sstr.encode('utf-8'), modify='0',ext=comm.moviepoint))
 			if len(context_menu_items)>0 and listitem!=None:
 				listitem.add_context_menu_items(context_menu_items,False)
 				menus.append(listitem)
 			
-		if minfo.has_key('casts'):
-			for cast in minfo['casts']:
-				thumb=xbmc.translatePath( os.path.join( __cwd__, 'guest.png') ).decode('utf-8')
-				if cast['avatars']:
-					if cast['avatars']['medium']:
-						thumb=cast['avatars']['medium']
-				castname=cast['name'].encode('utf-8')
-				
-				menus.append({'label': '演员:[COLOR FFFF66AA]%s[/COLOR]' % (castname),
-						'path':  plugin.url_for('dbactor', sstr=castname, page=0),
-						'context_menu':[('搜索'+colorize_label(castname.encode('UTF-8'), color='00FF00'), 
-							'RunPlugin('+plugin.url_for('searchinit',stypes='pan,bt,db',sstr=castname.encode('UTF-8'),modify='1',otherargs='{}')+')',)],
-						'thumbnail':thumb})
-		if minfo.has_key('directors'):
-			for director in minfo['directors']:
-				thumb=xbmc.translatePath( os.path.join( __cwd__, 'guest.png') ).decode('utf-8')
-				if director['avatars']:
-					if director['avatars']['medium']:
-						thumb=director['avatars']['medium']
-				directorname=director['name'].encode('utf-8')
-				menus.append({'label': '导演:[COLOR FFFFAA66]%s[/COLOR]' % (directorname),
-						'path':  plugin.url_for('dbactor', sstr=directorname, page=0),
-						'context_menu':[('搜索'+colorize_label(directorname.encode('UTF-8'), color='00FF00'), 
-							'RunPlugin('+plugin.url_for('searchinit',stypes='pan,bt,db',sstr=directorname.encode('UTF-8'),modify='1',otherargs='{}')+')',)],
-						'thumbnail':thumb})
-		if minfo.has_key('year'):
-			menus.append({'label': '年代:[COLOR FF00AAFF]%s[/COLOR]' % (minfo['year']),
-					'path':  plugin.url_for('dbmovie',tags=minfo['year'],sort='U',page='0',addtag='0',scorerange='0',year_range='0')})
-		if minfo.has_key('genres'):
-			for genres in minfo['genres']:
-				menus.append({'label': '类型:[COLOR FF00AAFF]%s[/COLOR]' % (str(genres)),
-						'path':  plugin.url_for('dbmovie',tags=str(genres),sort='U',page='0',addtag='0',scorerange='0',year_range='0')})
-		if minfo.has_key('countries'):
-			for country in minfo['countries']:
-				menus.append({'label': '国家:[COLOR FF00AAFF]%s[/COLOR]' % (str(country)),
-						'path':  plugin.url_for('dbmovie',tags=str(country),sort='U',page='0',addtag='0',scorerange='0',year_range='0')})
-		if minfo.has_key('tags'):
-			for tag in minfo['tags']:
-				menus.append({'label': '标签:[COLOR FF00AAFF]%s[/COLOR]' % (str(tag)),
-						'path':  plugin.url_for('dbmovie',tags=str(tag),sort='U',page='0',addtag='0',scorerange='0',year_range='0')})
+		
+		for cast in celes:
+			thumb=cast['img']
+			cast['name']+' '+cast['role']
+			
+			menus.append({'label': '[COLOR FFFF66AA]%s[/COLOR]%s' % (cast['name'],cast['role']),
+					'path':  plugin.url_for('dbactor', sstr=cast['id'],sort='time',page=0),
+					'context_menu':[('搜索'+colorize_label(cast['name'].encode('UTF-8'), color='00FF00'), 
+						'RunPlugin('+plugin.url_for('searchinit',stypes='pan,bt,db',sstr=cast['name'].encode('UTF-8'),modify='1',otherargs='{}')+')',)],
+					'thumbnail':thumb})
+		
+		menus.append({'label': '年代:[COLOR FF00AAFF]%s[/COLOR]' % (year),'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'tag.png') ).decode('utf-8'),
+					'path':  plugin.url_for('dbmovie',tags=year,sort='U',page='0',addtag='0',scorerange='0',year_range='0')})
+		for genre in genres:
+			menus.append({'label': '类型:[COLOR FF00AAFF]%s[/COLOR]' % (genre),'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'tag.png') ).decode('utf-8'),
+					'path':  plugin.url_for('dbmovie',tags=genre,sort='U',page='0',addtag='0',scorerange='0',year_range='0')})
+		for area in areas:
+			menus.append({'label': '地区:[COLOR FF00AAFF]%s[/COLOR]' % (area),'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'tag.png') ).decode('utf-8'),
+					'path':  plugin.url_for('dbmovie',tags=area,sort='U',page='0',addtag='0',scorerange='0',year_range='0')})
+		for tag in tags:
+			menus.append({'label': '标签:[COLOR FF00AAFF]%s[/COLOR]' % (tag),'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'tag.png') ).decode('utf-8'),
+					'path':  plugin.url_for('dbmovie',tags=tag,sort='U',page='0',addtag='0',scorerange='0',year_range='0')})
 		'''
 		rsp = _http('https://movie.douban.com/subject/'+subject+'/',referer='https://www.douban.com/link2/')
 		for match in re.finditer('[\x22\x27]\x2Ftag\x2F(?P<tag>.*?)[\x22\x27]', rsp, re.DOTALL | re.IGNORECASE):
@@ -323,7 +417,7 @@ def dbmovie(tags='',sort='U',page=0,addtag=0,scorerange='',year_range=''):
 		if len(menus)==20:
 			menus.append({'label': '下一(第%d)页'%(int(page)+2),
 				'path': plugin.url_for('dbmovie',tags=tags2,sort=sort,page=int(page)+1,addtag='0',scorerange=scorerange,year_range=year_range),
-				'thumbnail':xbmc.translatePath( os.path.join( __cwd__, 'nextpage.png') ).decode('utf-8')})
+				'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'nextpage.png') ).decode('utf-8')})
 		menus.insert(0, {'label': '标签:[COLOR FFFF3333]%s[/COLOR]'%(tags),
 			'path': plugin.url_for('dbmovie',tags=tags2,sort=sort,page='0',addtag='1',scorerange=scorerange,year_range=year_range)})
 		menus.insert(0, {'label': '年代:[COLOR FFFF3333]%s[/COLOR]'%(year_range),
@@ -333,8 +427,8 @@ def dbmovie(tags='',sort='U',page=0,addtag=0,scorerange='',year_range=''):
 		
 		menus.insert(0, {'label': '排序:[COLOR FFFF3333]%s[/COLOR]'%(sorttype),
 			'path': plugin.url_for('dbmovie',tags=tags2,sort='set',page='0',addtag='0',scorerange=scorerange,year_range=year_range)})
-		setthumbnail['set']=True
 		plugin.set_content('movies')
+		setthumbnail['set']=True
 		return menus
 	except Exception,e:
 		plugin.notify(str(e))
@@ -402,83 +496,120 @@ def dbsearch(sstr, page=0):
 		if minfo['more']:
 			menus.append({
 				'label': '下一页',
-				'path': plugin.url_for('dbactor', sstr=sstr, page=str(int(page)+1)),
-				'thumbnail':xbmc.translatePath( os.path.join( __cwd__, 'nextpage.png') ).decode('utf-8'),
+				'path': plugin.url_for('dbsearch', sstr=sstr, page=str(int(page)+1)),
+				'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'nextpage.png') ).decode('utf-8'),
 				})
 	#except: pass
 	setthumbnail['set']=True
 	return menus
 
-@plugin.route('/dbactor/<sstr>/<page>')
-def dbactor(sstr, page=0):
-	if not sstr or sstr=='0':
-		sstr = keyboard()
-		if not sstr or sstr=='0':
-			return
-	try:
-		url = 'https://www.douban.com/j/search?q=%s&start=%s&cat=1002' % (sstr, str(int(page)*20))
-		rsp = _http(url)
-		minfo = json.loads(rsp[rsp.index('{'):])
-		menus =[]
-		if minfo.has_key('items'):
-			for item in minfo['items']:
-				rtxt =r'subject%2F(.*?)%2F.*?<img\s+src="(.*?)">.*?}\s*\x29\s*"\s*>(.*?)\s*</a>.*?rating-info">(.*?)</div>'
-				patt = re.compile(rtxt, re.S)
-				m = patt.search(item)
-				if m:
-					rat='-'
-					ratm = re.search(r'rating_nums">(.*?)</span>', m.group(4), re.DOTALL | re.IGNORECASE)
-					if ratm:
-						rat = ratm.group(1)
-
-					menus.append({'label': '%s[%s]'%(m.group(3),rat),
-						'path': plugin.url_for('dbsubject', subject=m.group(1)),
-						'thumbnail': m.group(2),
-						'context_menu':[('搜索'+colorize_label(m.group(3).encode('UTF-8'), color='00FF00'), 
-							'RunPlugin('+plugin.url_for('searchinit',stypes='pan,bt',sstr=m.group(2).encode('UTF-8'),modify='1',otherargs='{}')+')',)],
-						})
-				else:
-					plugin.log.error(item)
-	except:
-		return
-	#try:
-	if minfo.has_key('more'):
-		if minfo['more']:
-			menus.append({
-				'label': '下一页',
-				'path': plugin.url_for('dbactor', sstr=sstr, page=str(int(page)+1)),
-				'thumbnail':xbmc.translatePath( os.path.join( __cwd__, 'nextpage.png') ).decode('utf-8'),
+@plugin.route('/celephotos/<cele>/<page>')
+def celephotos(cele,page=0):
+	url='https://movie.douban.com/celebrity/%s/photos/?start=%d&sortby=like&size=a&subtype=a'%(cele,int(page)*30)
+	#plugin.log.error(url)
+	rsp = _http(url,referer='https://www.douban.com/link2/')
+	rtxt=r'img\s+src\x3D\x22(?P<imgurl>[^\s]*?)\x22.*?\x22name\x22\x3E(?P<imgname>.*?)\x3C'
+	menus=[]
+	for photo in re.finditer(rtxt, rsp, re.DOTALL):
+		resource_url=''
+		limg=photo.group('imgurl')
+		limg=limg.replace('/m/','/l/')
+		imgname=HTMLParser.HTMLParser().unescape(photo.group('imgname').strip())
+		menus.append({'label':imgname,
+				'path': plugin.url_for('showpic', imageurl=limg),
+				#'path':limg,
+				#'is_playable':True, 
+				#'info_type':'video',
+				'properties':{'mimetype':'image/jpeg'},
+				'thumbnail': photo.group('imgurl'),
 				})
-	#except: pass
+	m = re.search("\x22count\x22.*?(?P<count>[0-9]+)", rsp, re.DOTALL)
+	if m:
+		count =int( m.group('count'))
+		totalpage=int((count-1)/30)
+		if int(page)<totalpage:
+			menus.append({'label':'下一页','thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'nextpage.png') ).decode('utf-8'),
+					'path':  plugin.url_for('celephotos', cele=cele,page=int(page)+1)})
+	plugin.set_content('images')
 	setthumbnail['set']=True
 	return menus
-	'''
-	urlpre = 'http://movie.douban.com/subject_search'
-	if 'none' in sstr:
-		sstr = keyboard()
-		if not sstr:
-			return
-	try:
-		url = '%s?search_text=%s&start=%s' % (urlpre ,sstr, str(int(page)*15))
-		rsp = _http(url)
-		menus=rspmenus(rsp)
-	except:return
 	
+url = 'https://movie.douban.com/celebrity/1274761/photos/'
+@plugin.route('/dbactor/<sstr>/<sort>/<page>')
+def dbactor(sstr,sort='time',page=0):
 	try:
-		count = re.findall(r'class="count">.*?(\d+).*?</span>', rsp)		
-		count = int(count[0])
-		page = int(page)		
-		if (page+1)*15 < count:
-			menus.append({
-				'label': '下一页',
-				'path': plugin.url_for('dbactor', sstr=sstr, page=page+1),
-				'thumbnail':xbmc.translatePath( os.path.join( __cwd__, 'nextpage.png') ).decode('utf-8'),
-				})
-	except:
-		pass
-	setthumbnail['set']=True
-	return menus
-	'''
+		url = 'https://movie.douban.com/celebrity/%s/' % (sstr)
+		rsp = _http(url)
+		celename=celeinfo=celeimg=summary=''
+		m = re.search(r"\x22nbg\x22\s+title\x3D\x22(?P<celename>.*?)\x22\s+href\x3D\x22(?P<celeimg>.*?)\x22", rsp, re.DOTALL)
+		if m:
+			celename = m.group("celename")
+			celeimg= m.group("celeimg")
+		rtxt = r'(?P<celeinfo>\x3Cli\x3E\s+\x3Cspan\x3E性别.+?)\x3C\x2Ful\x3E'
+		m = re.search(rtxt, rsp, re.DOTALL)
+		if m:
+			celeinfo=m.group('celeinfo')
+			celeinfo=re.sub(r'\x3C.*?\x3E','',celeinfo)
+			celeinfo=re.sub(r'\x3A\s+','\x3A',celeinfo, re.DOTALL)
+			celeinfo=celeinfo.replace(' ','')
+			celeinfo=re.sub(r'\s+','\r\n',celeinfo, re.DOTALL)
+			plugin.log.error(celename)
+		m = re.search(r'\x22short\x22\x3E(?P<summary>.*?)\x3C', rsp, re.DOTALL)
+		if m:
+			summary = m.group("summary")
+		m = re.search(r'\x22all\s+hidden\x22\x3E(?P<summary>.*?)\x3C', rsp, re.DOTALL)
+		if m:
+			summary = m.group("summary")
+		menus =[]
+		menus.append({'label':'简介：[COLOR FFFF2222]%s[/COLOR]'%celename,
+					'path':  plugin.url_for('dbsummary', summary=celename+celeinfo+summary),
+					'thumbnail':celeimg})
+		menus.append({'label':comm.colorize_label('影人图片',None,color='32FF94') ,
+					'path':  plugin.url_for('celephotos', cele=sstr,page=0),
+					'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'picture.png') ).decode('utf-8')})
+		if sort=='time':
+			menus.append({'label': '按[COLOR FFFF3333]评分[/COLOR]排序',
+				'path': plugin.url_for('dbactor',sstr=sstr,sort='vote',page='0')})
+		else:
+			menus.append({'label': '按[COLOR FFFF3333]时间[/COLOR]排序',
+				'path': plugin.url_for('dbactor',sstr=sstr,sort='time',page='0')})
+		url = 'https://movie.douban.com/celebrity/%s/movies?start=%d&format=pic&sortby=%s&' % (sstr,int(page)*10,sort)
+		rsp = _http(url)
+		rtxt=r'subject\x2F(?P<id>[0-9]+)\x2F.*?img\ssrc\x3D\x22(?P<imgurl>.*?)\x22.*?title\x3D\x22(?P<title>.*?)\x22.*?\x22star\s.*?span\x3E(?P<rate>.*?)\x3C\x2Fdiv'
+		for sub in re.finditer(rtxt, rsp, re.DOTALL):
+			rate = ''
+			mrate=re.search(r'\x3Cspan\x3E(?P<rate>[\x2E0-9]+?)\x3C',sub.group('rate').strip(), re.DOTALL)
+			if mrate:
+				rate=mrate.group('rate')
+			
+			context_menu_items=[]
+			context_menu_items.append(('搜索'+colorize_label(sub.group('title').encode('UTF-8'), color='00FF00'), 
+				'RunPlugin('+plugin.url_for('searchinit',stypes='pan,bt,db',sstr=sub.group('title').encode('UTF-8'),modify='1',otherargs='{}')+')',))
+				
+			listitem=ListItem(label='%s[[COLOR FFFF3333]%s[/COLOR]]'%(sub.group('title'),rate),
+					thumbnail= sub.group('imgurl'), 
+					path = plugin.url_for('dbsubject', subject=sub.group('id')),)
+					
+			if len(context_menu_items)>0 and listitem!=None:
+				listitem.add_context_menu_items(context_menu_items,False)
+				menus.append(listitem)
+		
+		m = re.search("\x22count\x22.*?(?P<count>[0-9]+)", rsp, re.DOTALL)
+		if m:
+			count =int( m.group('count'))
+			totalpage=int((count-1)/30)
+			if int(page)<totalpage:
+				menus.append({'label':'下一页','thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'nextpage.png') ).decode('utf-8'),
+						'path':  plugin.url_for('dbactor',sstr=sstr,sort=sort,page=int(page)+1)})
+		plugin.set_content('images')
+		setthumbnail['set']=True
+		return menus
+		return menus
+		
+	except Exception,e:
+		plugin.notify(str(e))
+		return
+	
 
 @plugin.route('/dbtops')
 def dbtops():
@@ -527,10 +658,10 @@ def dbtop(page):
 		if page <9 :
 			menus.append({'label': '下一页',
 						  'path': plugin.url_for('dbtop', page=page+1),
-						  'thumbnail':xbmc.translatePath( os.path.join( __cwd__, 'nextpage.png') ).decode('utf-8')})
+						  'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'nextpage.png') ).decode('utf-8')})
 		
-		setthumbnail['set']=True
 		plugin.set_content('movies')
+		setthumbnail['set']=True
 		return menus
 	except:
 		return
@@ -560,8 +691,9 @@ def dbtypetop(type='1',start=0):
 		if len(menus)==20:
 			menus.append({'label': '下一页',
 				'path': plugin.url_for('dbtypetop',type=type,start=int(start)+20),
-				'thumbnail':xbmc.translatePath( os.path.join( __cwd__, 'nextpage.png') ).decode('utf-8')})
+				'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'nextpage.png') ).decode('utf-8')})
 		
+		plugin.set_content('movies')
 		setthumbnail['set']=True
 		return menus
 	except:

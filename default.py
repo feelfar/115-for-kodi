@@ -887,7 +887,7 @@ def index():
 		#{'label': '磁力搜索', 'path': plugin.url_for('btsearchother',sstr='0', modify='0'),'thumbnail':xbmc.translatePath(os.path.join( IMAGES_PATH, 'magnet.png'))},
 		{'label': '豆瓣标签', 'path': plugin.url_for('dbmovie',tags='0',sort='U',page='0',addtag='0',scorerange='0',year_range='0'),
 							'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'douban.png') )},
-		#{'label': '豆瓣电影搜索', 'path': plugin.url_for('dbactor', sstr='0', page=0),'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'moviesearch.png') )},
+		#{'label': '豆瓣电影搜索', 'path': plugin.url_for('dbsearch', sstr='0', page=0),'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'moviesearch.png') )},
 		{'label': '豆瓣排行榜', 'path': plugin.url_for('dbtops'),'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'topmovies.png') )},
 		{'label': '扫码登入', 'path': plugin.url_for('login'),'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'scan.png') )},
 		{'label': '设置', 'path': plugin.url_for('setting'),'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'setup.png') )},
@@ -2308,5 +2308,8 @@ if __name__ == '__main__':
 	skindir=xbmc.getSkinDir()
 	if setthumbnail['set']:
 		if comm.ALL_VIEW_CODES['thumbnail'].has_key(skindir):
-			plugin.set_view_mode(comm.ALL_VIEW_CODES['thumbnail'][skindir])
+			thumbmode=comm.ALL_VIEW_CODES['thumbnail'][skindir]
+			#plugin.notify(str(thumbmode))
+			#plugin.set_view_mode(comm.ALL_VIEW_CODES['thumbnail'][skindir])
+			xbmc.executebuiltin('Container.SetViewMode(%d)' % thumbmode)
 
