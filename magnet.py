@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 # magnet.py
-
+#siteurlcfg
+#btdig#https://btdigg.unblockit.dev#
+#/siteurlcfg
 import xbmc,xbmcgui,os,sys
 import comm
 from xbmcswift2 import ListItem
