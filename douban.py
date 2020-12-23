@@ -554,7 +554,7 @@ def dbactor(sstr,sort='time',page=0):
 			celeinfo=celeinfo.replace(' ','')
 			celeinfo=re.sub(r'\s+','\r\n',celeinfo, re.DOTALL)
 			plugin.log.error(celename)
-		m = re.search(r'\x22short\x22\x3E(?P<summary>.*?)\x3C', rsp, re.DOTALL)
+		m = re.search(r'影人简介.*?\x22bd\x22\x3E(?P<summary>.*?)\x3C', rsp, re.DOTALL)
 		if m:
 			summary = m.group("summary")
 		m = re.search(r'\x22all\s+hidden\x22\x3E(?P<summary>.*?)\x3C', rsp, re.DOTALL)
