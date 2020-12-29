@@ -1100,9 +1100,6 @@ def pansearch(cid,mstr,offset):
 		
 		if str(plugin.get_setting('genm3u8'))=='true':
 			items.append({'label': '生成M3U8文件', 'path': plugin.url_for('m3u8',cid=cid,offset=offset,star='0',name=milkname.encode('utf-8'))})
-		if str(plugin.get_setting('milkvr'))=='true':
-			items.append({'label': '生成MilkVR文件', 'path': plugin.url_for('milkvr',cid=cid,offset=offset,star='0',name=milkname.encode('utf-8'))})
-		
 		for item in data['data']:
 			listitem=getListItem(item,mstr)
 			if listitem!=None:
@@ -1150,9 +1147,7 @@ def getListItem(item,pathname=''):
 			listitem.set_is_playable('true')
 			context_menu_items.append(('FFMpeg转码下载', 
 				'RunPlugin('+plugin.url_for('ffmpeg',pc=item['pc'],name=item['n'].encode('UTF-8'))+')',))
-			if str(plugin.get_setting('milkvr'))=='true':
-				context_menu_items.append(('在'+colorize_label('SamsungVR','dir')+'打开', 
-					'RunPlugin('+plugin.url_for('samsungvr',pc=item['pc'],fname=item['n'].encode('UTF-8'),pathname=pathname.encode('UTF-8'))+')',))
+			
 		elif item.has_key('ms'):
 			#imgurl=getimgurl(item['pc'])
 			listitem=ListItem(label=colorize_label(item['n'], 'image'), label2=None, icon=None, thumbnail=None, path=plugin.url_for('playimg',pc=item['pc'],name=item['n'].encode('UTF-8')))
@@ -1166,10 +1161,7 @@ def getListItem(item,pathname=''):
 			listitem.set_info('video', {'title':item['n'],'size': item['s']})
 			#listitem.as_xbmc_listitem().setContentLookup(False)
 			listitem.set_is_playable('true')
-			if str(plugin.get_setting('milkvr'))=='true':
-				context_menu_items.append(('在'+colorize_label('SamsungVR','dir')+'打开',
-					'RunPlugin('+plugin.url_for('samsungvr',pc=item['pc'],fname=item['n'].encode('UTF-8'),pathname=pathname.encode('UTF-8'))+')',))
-
+			
 		elif  item['ico'] in musicexts:
 			listitem=ListItem(label=colorize_label(item['n'], 'audio'), label2=None, icon=None, thumbnail=None, path=plugin.url_for('play',pc=item['pc'],name=item['n'].encode('UTF-8'),iso='1'))
 			listitem.set_info('audio', {'title':item['n'],'size': item['s']})
@@ -1306,17 +1298,17 @@ def settag(fid,fllist):
 	dialog=xbmcgui.Dialog()
 	seltags=''
 	sel=dialog.multiselect('设置标签',tagnamelist,preselect=presel)
-	for tag in sel:
-		#plugin.notify(str(tag))
-		try:
-			seltags=seltags+tagidlist[tag]+','
-		except:
-			pass
+	if sel:
+		for tag in sel:
+			try:
+				seltags=seltags+tagidlist[tag]+','
+			except:
+				pass
 	result = xl.settag(fid,seltags)	
 	if result:
 		xbmc.executebuiltin('Container.Refresh()')
 	else:
-		plugin.notify(msg='重命名失败')		
+		plugin.notify(msg='重命名失败')
 
 def getdirinfo(cid):
 	pageitems = {'0': 25,'1': 50,'2': 100}
@@ -1500,8 +1492,7 @@ def getfilelist(cid,offset,star,typefilter='0',searchstr='0',changesort='0'):
 		milkname=milkname[-20:].encode('utf-8').replace('\n','').replace('\r','')
 		if str(plugin.get_setting('genm3u8'))=='true':
 			items.append({'label': '生成M3U8文件', 'path': plugin.url_for('m3u8',cid=cid,offset=offset,star=star,typefilter=typefilter,searchstr=searchstr,name=milkname)})
-		if str(plugin.get_setting('milkvr'))=='true':
-			items.append({'label': '生成MilkVR文件', 'path': plugin.url_for('milkvr',cid=cid,offset=offset,star=star,typefilter=typefilter,searchstr=searchstr,name=milkname)})
+		
 		#plugin.notify('{"cid":"%s"}'%(cid))
 		if searchstr=='' or searchstr=='0':
 			items.append({'label': '搜索当前目录【%s】'%colorize_label(itemname, 'dir'),
@@ -1973,151 +1964,6 @@ def shellopen(pc,fname):
 	if url=='-1':
 		return
 	comm.shellopenurl(url,samsung=0)
-	
-@plugin.route('/samsungvr/<pc>/<fname>/<pathname>')
-def samsungvr(pc,fname,pathname):
-	changeserver=getchangeserver()
-	if changeserver=='-1':
-		return
-	#url=xl.getfiledownloadurl(pc,changeserver,True)
-	data=getfiledata(pc)
-	
-	url=getvideourl(pc,data['file_id'],'99',fname)
-	
-	if url=='':
-		plugin.notify(msg='无视频文件.')
-		return
-	if url=='-1':
-		return
-		
-	videotypes=['_2dp', '_3dpv', '_3dph','3dv', '3dh', '180x180_3dv', '180x180_3dh','180x180_squished_3dh', '_v360']
-	dialog = xbmcgui.Dialog()
-	sel = dialog.select('视频类型', videotypes)
-	if sel!=-1:
-		videotype=videotypes[sel]
-		savepath=xbmc.translatePath( os.path.join('/sdcard/MilkVr/115/',pathname.decode("utf-8")[0:40])).decode("utf-8")
-		
-		if not os.path.exists(savepath):
-			os.makedirs(savepath)
-		fname=fname.decode("utf-8")[-40:]+'_'+pathname
-		fname=fname.decode("utf-8")[0:60]
-		fname=fname.encode("utf-8").replace('\n','').replace('\r','')
-		fname = re.sub('[\/:*?"<>|]','-',fname)
-		mvrlfname=xbmc.translatePath( os.path.join(savepath, fname+'.mvrl')).decode("utf-8")
-		with open(mvrlfname, "wb") as mvrlFile:
-			mvrlFile.write('mvrl.version=2\n')
-			mvrlFile.write('video.url='+url+'\n')
-			mvrlFile.write('video.videoType='+videotype+'\n')
-			mvrlFile.write('video.audioType=none\n')
-			mvrlFile.write('video.thumbnail=http://pic.pptbz.com/pptpic/201411/2014111612541982.jpg\n')
-			mvrlFile.write('video.displayTitle='+fname+'\n')
-		mvrlFile.close()
-		
-		savepath=xbmc.translatePath( os.path.join('/sdcard/STRM/115/',pathname.decode("utf-8")[0:40])).decode("utf-8")
-		if not os.path.exists(savepath):
-			os.makedirs(savepath)
-		fname=fname.decode("utf-8")[-40:]+'_'+pathname
-		fname=fname.decode("utf-8")[0:60]
-		fname=fname.encode("utf-8").replace('\n','').replace('\r','')
-		fname = re.sub('[\/:*?"<>|]','-',fname)
-		mvrlfname=xbmc.translatePath( os.path.join(savepath, fname+'.strm')).decode("utf-8")
-		with open(mvrlfname, "wb") as mvrlFile:
-			mvrlFile.write(url+'\n')
-		mvrlFile.close()
-		
-		comm.shellopenurl('milkvr://sideload/?url=%s&video_type=%s'%(url,videotype),samsung=1)
-	
-global milkvrcount
-@plugin.route('/milkvr/<cid>/<offset>/<star>/<typefilter>/<searchstr>/<name>')
-def milkvr(cid,offset,star,typefilter='0',searchstr='0',name='0'):
-	stm='99'
-	videotypes=['_2dp', '_3dpv', '_3dph','3dv', '3dh', '180x180_3dv', '180x180_3dh','180x180_squished_3dh', '_v360']
-	dialog = xbmcgui.Dialog()
-	sel = dialog.select('视频类型', videotypes)
-	global milkvrcount
-	milkvrcount=0
-	if sel!=-1:
-		basepath='/sdcard/MilkVr/115/'
-		savepath=xbmc.translatePath( os.path.join( basepath, name.decode("utf-8")[0:40])).decode("utf-8")
-		if not os.path.exists(savepath):
-			os.makedirs(savepath)
-			
-		basepath='/sdcard/STRM/115/'
-		savepath=xbmc.translatePath( os.path.join( basepath, name.decode("utf-8")[0:40])).decode("utf-8")
-		if not os.path.exists(savepath):
-			os.makedirs(savepath)
-			
-		changeserver=getchangeserver()
-		if changeserver=='-1':
-			return
-		htmlfname=xbmc.translatePath( os.path.join(basepath, urllib.quote_plus(name)[0:20]+'.html')).decode("utf-8")
-		with open(htmlfname, "wb") as htmlFile:
-			htmlFile.write('<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8"><TITLE>%s</TITLE><h3>%s</h3>'%(name,name))
-			htmlFile.write('\r\n')
-		htmlFile.close()
-		genmvrl(cid,offset,star,typefilter,searchstr,videotypes[sel],stm,changeserver,name)
-	plugin.notify(msg='生成'+str(milkvrcount)+'个MVRL文件！')
-
-def genmvrl(cid,offset,star,typefilter,searchstr,videotype,stm,changeserver='',name=''):
-	global milkvrcount
-	if milkvrcount>=200:
-		return
-	#if star=='1':
-	data=getfilelistdata(cid,offset,star,typefilter,searchstr)
-	if data['state']:
-		pname=''
-		if data.has_key('path'):
-			pname=data['path'][len(data['path'])-1]['name'];
-		if data.has_key('folder'):
-			if data['folder'].has_key('name'):
-				pname=data['folder']['name']
-		
-		for item in data['data']:
-			if item.has_key('sha'):
-				if (item.has_key('iv') or item['ico'] in videoexts) and int(item['s'])>120000000:
-					url=getvideourl(item['pc'],item['fid'],stm,item['n'].encode('UTF-8'))
-					if url!='':
-						fname=item['n']
-						fname=fname[:fname.rfind('.')]
-						if len(fname)<=20:
-							if item.has_key('dp'):
-								fname=fname+'_'+item['dp'];
-							else:
-								fname=fname+'_'+pname
-						#fname=fname.decode("utf-8")[-40:]+'_'+pname
-						fname=fname.decode("utf-8")[0:30]+fname.decode("utf-8")[-20:]
-						fname=fname.encode("utf-8").replace('\n','').replace('\r','')
-						fname = re.sub('[\/:*?"<>|]','-',fname)
-						
-						basepath='/sdcard/MilkVr/115/'
-						savepath=xbmc.translatePath( os.path.join( basepath, name.decode("utf-8")[0:40])).decode("utf-8")
-						mvrlfname=xbmc.translatePath( os.path.join(savepath, fname+'.mvrl')).decode("utf-8")
-						with open(mvrlfname, "wb") as mvrlFile:
-							mvrlFile.write('mvrl.version=2\n')
-							mvrlFile.write('video.url='+url+'\n')
-							mvrlFile.write('video.videoType='+videotype+'\n')
-							mvrlFile.write('video.audioType=none\n')
-							mvrlFile.write('video.thumbnail=http://pic.pptbz.com/pptpic/201411/2014111612541982.jpg\n')
-							mvrlFile.write('video.displayTitle='+fname+'\n')
-						mvrlFile.close()
-						htmlfname=xbmc.translatePath( os.path.join('/sdcard/MilkVr/115/', name+'.html') ).decode("utf-8")
-						with open(htmlfname, "ab") as htmlFile:
-							htmlFile.write('<DT><a href="milkvr://sideload/?url=%s&video_type=%s" type="video/mp4" >%s</a>'%(url,videotype,fname))
-						htmlFile.close()
-						
-						basepath='/sdcard/STRM/115/'
-						savepath=xbmc.translatePath( os.path.join( basepath, name.decode("utf-8")[0:40])).decode("utf-8")
-						mvrlfname=xbmc.translatePath( os.path.join(savepath, fname+'.strm')).decode("utf-8")
-						with open(mvrlfname, "wb") as mvrlFile:
-							mvrlFile.write(url+'\n')
-						mvrlFile.close()
-						
-						
-					milkvrcount+=1
-					if milkvrcount>=200:
-						break
-			else:
-				genmvrl(item['cid'],'0','0','0','0',videotype,stm,changeserver,name)
 
 @plugin.route('/m3u8/<cid>/<offset>/<star>/<typefilter>/<searchstr>/<name>')
 def m3u8(cid,offset,star,typefilter='0',searchstr='0',name='0'):

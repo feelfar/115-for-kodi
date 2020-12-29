@@ -6,6 +6,8 @@ import comm
 plugin = comm.plugin
 setthumbnail=comm.setthumbnail
 __cwd__=comm.__cwd__
+__resource__   = xbmc.translatePath( os.path.join( __cwd__, 'resources' ))
+IMAGES_PATH = xbmc.translatePath(os.path.join(__resource__, 'media'))
 keyboard=comm.keyboard
 _http=comm._http
 colorize_label=comm.colorize_label
@@ -129,7 +131,7 @@ def javmagnet(qbbb='qb',gid='0',uc='0'):
 		
 		listitem=ListItem(label=comm.colorize_label(title, 'bt'), 
 			label2=filesize.encode('UTF-8'), icon=None,
-			thumbnail=xbmc.translatePath( os.path.join( __cwd__, 'magnet.jpg') ).decode('utf-8'), 
+			thumbnail=xbmc.translatePath( os.path.join( IMAGES_PATH, 'magnet.jpg') ).decode('utf-8'), 
 			path=plugin.url_for('execmagnet',
 			url=magnet.encode('UTF-8'),title=title,msg=filemsg))
 		
@@ -160,13 +162,13 @@ def javdetail(qbbb='qb',movieno='0',id='0',title='0'):
 			if uc=='1':qbbb='bb'
 		menus.append({'label': '[COLOR FF00FFFF]自带磁力[/COLOR]',
 						'path': plugin.url_for('javmagnet', qbbb=qbbb, gid=gid,uc=uc),
-						'thumbnail':xbmc.translatePath( os.path.join( __cwd__, 'magnet.jpg') ).decode('utf-8')})
+						'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'magnet.jpg') ).decode('utf-8')})
 	context_menu_items=[]
 	context_menu_items.append(('搜索'+colorize_label(id.encode('UTF-8'), color='00FF00'), 
 		'RunPlugin('+plugin.url_for('searchinit',stypes='pan,bt',sstr=id.encode('UTF-8'),modify='1',otherargs='{}')+')',))
 		
 	listitem=ListItem(label='BT:[COLOR FF00FFFF]%s[/COLOR]' % (id.encode('utf-8')),
-			thumbnail=xbmc.translatePath( os.path.join( __cwd__, 'magnet.jpg') ).decode('utf-8'), 
+			thumbnail=xbmc.translatePath( os.path.join( IMAGES_PATH, 'magnet.jpg') ).decode('utf-8'), 
 			path=plugin.url_for('btsearchInit', sstr=id.encode('utf-8'), modify='0'),)
 			
 	if len(context_menu_items)>0 and listitem!=None:
@@ -320,7 +322,7 @@ def javdetail(qbbb='qb',movieno='0',id='0',title='0'):
 	if movieid!='':
 		menus.insert(1, {'label':'预告片',
 			  'path': plugin.url_for('freepv', movieid=movieid), 
-			  'thumbnail':xbmc.translatePath( os.path.join( __cwd__, 'movies.png') ).decode('utf-8'),
+			  'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'movies.png') ).decode('utf-8'),
 			  'is_playable':True, 
 			  'info_type':'video',
 			  'info':{'title':title}
@@ -446,11 +448,11 @@ def javlist(qbbb='qb',filtertype='0',filterkey='0',page=1):
 		if javbusurl['existmag']=='all':
 			menus.append({'label':'已显示所有片片',
 				'path': plugin.url_for('chg_existmag',qbbb=qbbb,filtertype=filtertype,filterkey=filterkey),
-				'thumbnail':xbmc.translatePath( os.path.join( __cwd__, 'movies.png') ).decode('utf-8')})
+				'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'movies.png') ).decode('utf-8')})
 		else:
 			menus.append({'label':'已显示有磁片片',
 				'path': plugin.url_for('chg_existmag',qbbb=qbbb,filtertype=filtertype,filterkey=filterkey),
-				'thumbnail':xbmc.translatePath( os.path.join( __cwd__, 'magnet.png') ).decode('utf-8')})
+				'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'magnet.png') ).decode('utf-8')})
 		rsp = _http(url,cookie='existmag='+javbusurl['existmag'])
 		
 		releech='movie-box.*?href="(?P<detailurl>.*?)".*?src="(?P<imageurl>.*?)".*?title="(?P<title>.*?)".*?<date>(?P<id>.*?)</date>.*?<date>(?P<date>.*?)</date>'
@@ -483,7 +485,7 @@ def javlist(qbbb='qb',filtertype='0',filterkey='0',page=1):
 		if rsp.find(strnextpage)>=0:
 			menus.append({'label': '下一页',
 						'path':plugin.url_for('javlist', qbbb=qbbb,filtertype=filtertype,filterkey=filterkey,page=int(page)+1),
-						'thumbnail':xbmc.translatePath( os.path.join( __cwd__, 'nextpage.png') ).decode('utf-8')})
+						'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'nextpage.png') ).decode('utf-8')})
 		setthumbnail['set']=True
 		plugin.set_content('movies')
 		return menus
@@ -521,7 +523,7 @@ def javstarlist(qbbb='qb',page=1):
 		if rsp.find(strnextpage)>=0:
 			menus.append({'label': '下一页',
 						'path':plugin.url_for('javstarlist', qbbb=qbbb,page=int(page)+1),
-						'thumbnail':xbmc.translatePath( os.path.join( __cwd__, 'nextpage.png') ).decode('utf-8')})
+						'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'nextpage.png') ).decode('utf-8')})
 		setthumbnail['set']=True
 		return menus
 	except:

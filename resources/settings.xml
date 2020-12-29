@@ -17,16 +17,15 @@
 	<setting id="imageext" type="text" label="图像文件扩展名" default="jpg,jpeg,bmp,tif,tiff,png,gif"/>
 	<setting id="showallfiles" type="bool" label="显示所有文件"  default="false"/>
 	<setting id="pageitem" type="enum" label="页面项目数" values="25|50|100" default="2"/>
-	<setting id="buildinkb" type="bool" label="使用内置键盘"  default="true"/>
+	<setting id="buildinkb" type="bool" label="使用内置键盘"  default="false"/>
 	<setting id="btmaxresult" type="enum" label="磁力搜索返回记录数" values="20|40|60|80|100" default="3"/>
   </category>    
   <category label="其它设置">
 	<setting id="javbus" type="bool" label="启用Javbus" default="true"/>
-	<setting id="javbusfb" type="text" label="Javbus防屏蔽网址" default="https://www.dmmbus.bid;https://www.seedmm.life;https://www.cdnbus.icu;https://www.dmmsee.work;https://www.busjav.work;"/>
-	<setting id="javbusom" type="text" label="Javbus好雷屋网址" default="https://www.javbus.zone"/>
+	<setting id="javbusfb" type="text" label="Javbus防屏蔽网址" default="https://www.busdmm.blog;https://www.seedmm.life;https://www.busfan.blog;https://www.busjav.work;"/>
+	<setting id="javbusom" type="text" label="Javbus好雷屋网址" default="https://www.javbus.one"/>
 	<setting id="panedit" type="bool" label="启用网盘删移改功能" default="false"/>
 	<setting id="genm3u8" type="bool" label="批量生成M3U8" default="false"/>
-	<setting id="milkvr" type="bool" label="启用MilkVR" default="false"/>
 	
   </category>  
 </settings>
