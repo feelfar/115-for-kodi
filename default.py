@@ -281,10 +281,22 @@ class api_115(object):
 		except:
 			return {'state':False}
 			
+	def gettaglist(self):
+		data=self.urlopen('https://webapi.115.com/label/list?user_id=&offset=0&limit=11500&sort=create_time&order=desc')
+		return self.jsonload(data)
+		
 	def getfilelist(self,cid,offset,pageitem,star,sorttype,sortasc,typefilter='0',nf='0',search_value=''):
 		if search_value!='' and search_value!='0':
-			data=urllib.urlencode({'search_value': search_value,'cid':cid,'aid':'1','limit':str(pageitem),
-							'offset':str(offset),'format':'json','date':'','pick_code':'','type':typefilter,'source':''})
+			file_label=''
+			match=re.search(r'^tag\s*(?P<tag>[0-9]{10,})$',search_value)
+			if match:
+				file_label=match.group('tag')
+			if file_label:
+				data=urllib.urlencode({'file_label': file_label,'cid':cid,'aid':'1','limit':str(pageitem),
+							'o':sorttype,'asc':sortasc,'offset':str(offset),'format':'json','date':'','pick_code':'','type':typefilter,'source':''})
+			else:
+				data=urllib.urlencode({'search_value': search_value,'cid':cid,'aid':'1','limit':str(pageitem),
+							'o':sorttype,'asc':sortasc,'offset':str(offset),'format':'json','date':'','pick_code':'','type':typefilter,'source':''})
 			data=self.urlopen('http://web.api.115.com/files/search?'+data)
 		else:	
 			data = urllib.urlencode({'aid': '1','cid':cid,'limit':pageitem,'offset':offset,'type':typefilter,'star':star,'custom_order':'2',
@@ -328,6 +340,16 @@ class api_115(object):
 		
 	def rename(self,fid,newname):
 		data = urllib.urlencode({'fid': fid,'file_name':newname})
+		try:
+			data=self.urlopen('http://web.api.115.com/files/edit',data=data)
+			data= self.fetch(data).replace('\n','').replace('\r','')
+			data=json.loads(data[data.index('{'):])
+			return data['state']
+		except:
+			return False
+			
+	def settag(self,fid,tag):
+		data = urllib.urlencode({'fid': fid,'file_label':tag})
 		try:
 			data=self.urlopen('http://web.api.115.com/files/edit',data=data)
 			data= self.fetch(data).replace('\n','').replace('\r','')
@@ -508,11 +530,8 @@ wlHF+mkTJpKd5Wacef0vV+xumqNorvLpIXWKwxNaoHM=
 		return self.m115_sym_decode(bsrc2, len(tmp) - 16, bkey1,bkey2)
 		
 	def getfiledownloadurl(self,pc,changeserver='',withcookie=False):
-		#tm = str((int(long(time.time())/100000)*100000))
-		tm = str(int(long(time.time())))
-		pcencode = self.m115_encode((json.dumps({'pickcode': pc})).replace(' ',''),tm)
-		
-		data=self.urlopen('http://proapi.115.com/app/chrome/downurl?t='+tm,data=urllib.urlencode({'data':pcencode['data']}))
+		result = ''
+		data=self.urlopen("https://webapi.115.com/files/download?pickcode="+pc+"&_="+str(long(time.time())))
 		if 'Set-Cookie' in data.headers:
 			downcookies = re.findall(r"[0-9abcdef]{20,}\s*\x3D\s*[0-9abcdef]{20,}", data.headers['Set-Cookie'], re.DOTALL | re.MULTILINE)
 			'''
@@ -521,28 +540,44 @@ wlHF+mkTJpKd5Wacef0vV+xumqNorvLpIXWKwxNaoHM=
 			self.downcookie=''
 			for downcook in downcookies:
 				self.downcookie+=downcook
-		data = self.fetch(data)
-		jsondata = json.loads(data[data.index('{'):])
-		if jsondata['state'] != True:
-			if jsondata.has_key('msg'):
-				plugin.notify('获取文件下载链接出错'+jsondata['msg'])
-				return ''
-			if jsondata.has_key('error'):
-				plugin.notify('获取文件下载链接出错'+jsondata['error'])
-				return ''
-			else:
-				plugin.notify('获取文件下载链接出错')
-				return ''
-		decodetmp=self.m115_decode(jsondata['data'], pcencode['key'])
-		bdecode = bytearray()
-		bdecode.extend(decodetmp)
-		jsondata = json.loads(bdecode.decode('utf-8'))
-		jsondata=jsondata[jsondata.keys()[0]]
-		#plugin.log.error(type(jsondata))
-	
-		result = ''
-		if jsondata.has_key(u'url'):
-			result = jsondata[u'url'][u'url']
+			
+		data= self.jsonload(data)
+		if data['state']:
+			result=data['file_url']
+		else:
+			tm = str(int(long(time.time())))
+			pcencode = self.m115_encode((json.dumps({'pickcode': pc})).replace(' ',''),tm)
+			
+			data=self.urlopen('http://proapi.115.com/app/chrome/downurl?t='+tm,data=urllib.urlencode({'data':pcencode['data']}))
+			if 'Set-Cookie' in data.headers:
+				downcookies = re.findall(r"[0-9abcdef]{20,}\s*\x3D\s*[0-9abcdef]{20,}", data.headers['Set-Cookie'], re.DOTALL | re.MULTILINE)
+				'''
+				downcookies=data.headers['Set-Cookie'].split(',')
+				'''
+				self.downcookie=''
+				for downcook in downcookies:
+					self.downcookie+=downcook
+			data = self.fetch(data)
+			jsondata = json.loads(data[data.index('{'):])
+			if jsondata['state'] != True:
+				if jsondata.has_key('msg'):
+					plugin.notify('获取文件下载链接出错'+jsondata['msg'])
+					return ''
+				if jsondata.has_key('error'):
+					plugin.notify('获取文件下载链接出错'+jsondata['error'])
+					return ''
+				else:
+					plugin.notify('获取文件下载链接出错')
+					return ''
+			decodetmp=self.m115_decode(jsondata['data'], pcencode['key'])
+			bdecode = bytearray()
+			bdecode.extend(decodetmp)
+			jsondata = json.loads(bdecode.decode('utf-8'))
+			jsondata=jsondata[jsondata.keys()[0]]
+			#plugin.log.error(type(jsondata))
+		
+			if jsondata.has_key(u'url'):
+				result = jsondata[u'url'][u'url']
 		#plugin.log.error(result)
 		if withcookie:
 			cookies=''
@@ -891,7 +926,7 @@ def index():
 		{'label': '豆瓣排行榜', 'path': plugin.url_for('dbtops'),'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'topmovies.png') )},
 		{'label': '扫码登入', 'path': plugin.url_for('login'),'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'scan.png') )},
 		{'label': '设置', 'path': plugin.url_for('setting'),'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'setup.png') )},
-		{'label': '清空tempplay', 'path': plugin.url_for('cleartempplay')},
+		#{'label': '清空tempplay', 'path': plugin.url_for('cleartempplay')},
 		#{'label': 'captcha', 'path': plugin.url_for('captcha')},
 	]
 	if str(plugin.get_setting('javbus'))=='true':
@@ -956,6 +991,35 @@ def selectstr(sstr):
 			strsel=''
 	return strsel
 
+def gettaglist(color=True):
+	taglist=[]
+	data=xl.gettaglist()
+	if data['state']:
+		fllist=sorted( data['data']['list'],key=lambda k:k['sort'],reverse=True)
+		for tag in fllist:
+			name=tag['name']
+			if color and len(tag['color'])==7:
+				name=colorize_label(tag['name'], color=tag['color'][1:])
+			taglist.append([name,tag['id']])
+	return taglist
+	
+@plugin.route('/pantagsearch/<otherargs>')
+def pantagsearch(otherargs):
+	tagid=''
+	taglist=gettaglist()
+	dialog = xbmcgui.Dialog()
+	sel = dialog.select('选择标签',[k[0] for k in taglist])
+	
+	if sel!=-1:
+		tagid='tag'+taglist[sel][1]
+	if tagid:
+		cid='0'
+		dictotherargs=json.loads(otherargs)
+		if dictotherargs.has_key('cid'):
+			cid=dictotherargs['cid']
+		return getfilelist(cid=cid,offset=0,star='0',typefilter='0',searchstr=tagid,changesort='0')
+	return
+
 @plugin.route('/searchinit/<stypes>/<sstr>/<modify>/<otherargs>')
 def searchinit(stypes,sstr,modify,otherargs):
 	if not comm.searchvalues.raw_dict().has_key('strlist'):
@@ -1003,6 +1067,7 @@ def searchinit(stypes,sstr,modify,otherargs):
 			if ret:
 				comm.searchvalues['strlist']=[]
 		items=[]
+		items.append({'label': colorize_label('网盘标签搜索', color='00FFFF'), 'path': plugin.url_for('pantagsearch',otherargs=otherargs)})
 		items.append({'label': colorize_label('添加搜索关键字', color='00FF00'), 'path': plugin.url_for('searchinit',stypes=stypes,sstr='0',modify='1',otherargs=otherargs)})
 		for strvalue in comm.searchvalues['strlist'][::-1]:
 			context_menu_items=[]
@@ -1050,14 +1115,11 @@ def pansearch(cid,mstr,offset):
 			items.append({'label': colorize_label('下一页', 'next'),
 				'path': plugin.url_for('pansearch',cid=cid,mstr=mstr,offset=str(int(offset)+int(pageitem))),
 				'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'nextpage.png') ).decode('utf-8')})
-			#urlcache[cid+"/"+offset+"/"+str(star)] = items
-		#xbmc.executebuiltin('Container.SetViewMode(8)')
-		#skindir=xbmc.getSkinDir()
+		plugin.set_content('movies')
+		
 		if imagecount >= 10 and imagecount * 2 > len(items):
 			setthumbnail['set']=True
-			#plugin.notify('setthumbnail')
-			#if ALL_VIEW_CODES['thumbnail'].has_key(skindir):
-			#	plugin.set_view_mode(ALL_VIEW_CODES['thumbnail'][skindir])
+			
 		return items
 	else:
 		plugin.notify(msg='数据获取失败,错误信息:'+str(data['error']))
@@ -1148,13 +1210,21 @@ def getListItem(item,pathname=''):
 				#listitem.add_context_menu_items([('删除', 'RunPlugin('+plugin.url_for('deletefile',pid=item['pid'],fid=item['cid'],warringmsg=warringmsg)+')',)],False)
 				deleteurl=plugin.url_for('deletefile',pid=item['pid'],fid=item['cid'],warringmsg=warringmsg)
 				context_menu_items.append((colorize_label('删除',color='FF0044'), 'RunPlugin('+deleteurl+')',))
+	fl=','
+	if item.has_key('fid'):
+		fid=item['fid']
+	else:
+		fid=item['cid']
+	if item.has_key('fl') and  listitem!=None:
+		for tag in item['fl']:
+			fl=fl+tag['id']+','
+			if len(tag['color'])==7:
+				listitem.label=colorize_label('●', color=tag['color'][1:])+listitem.label
+	context_menu_items.append((colorize_label('设置标签',color='00CCCC'), 'RunPlugin('+plugin.url_for('settag',fid=fid,fllist=fl)+')',))		
 	if item.has_key('m') and  listitem!=None:
 		listitem.set_property('is_mark',str(item['m']))
 		listitem.label=colorize_label('★', 'star'+str(item['m']))+listitem.label
-		if item.has_key('fid'):
-			fid=item['fid']
-		else:
-			fid=item['cid']
+		
 		if str(plugin.get_setting('panedit'))=='true':
 			context_menu_items.append((colorize_label('重命名',color='0044FF'), 'RunPlugin('+plugin.url_for('rename',fid=fid,filename=item['n'].encode('UTF-8'))+')',))
 			context_menu_items.append((colorize_label('移动..',color='00FF44'), 'RunPlugin('+plugin.url_for('move',fid=fid,filename=item['n'].encode('UTF-8'))+')',))
@@ -1164,6 +1234,8 @@ def getListItem(item,pathname=''):
 		else:
 			#listitem.add_context_menu_items([('取消星标', 'RunPlugin('+plugin.url_for('mark',fid=fid,mark='0')+')',)],False)
 			context_menu_items.append(('取消星标', 'RunPlugin('+plugin.url_for('mark',fid=fid,mark='0')+')',))
+	
+			
 
 	if len(context_menu_items)>0 and listitem!=None:
 		listitem.add_context_menu_items(context_menu_items,False)
@@ -1219,6 +1291,32 @@ def rename(fid,filename):
 	else:
 		plugin.notify(msg='重命名失败')
 		
+@plugin.route('/settag/<fid>/<fllist>')
+def settag(fid,fllist):
+	taglist=gettaglist(color=False)
+	tagnamelist=[q[0] for q in taglist]
+	tagidlist=[q[1] for q in taglist]
+	presel=[]
+	fllist=fllist.split(',')
+	for fl in fllist:
+		try:
+			presel.append(tagidlist.index(fl))
+		except:
+			pass
+	dialog=xbmcgui.Dialog()
+	seltags=''
+	sel=dialog.multiselect('设置标签',tagnamelist,preselect=presel)
+	for tag in sel:
+		#plugin.notify(str(tag))
+		try:
+			seltags=seltags+tagidlist[tag]+','
+		except:
+			pass
+	result = xl.settag(fid,seltags)	
+	if result:
+		xbmc.executebuiltin('Container.Refresh()')
+	else:
+		plugin.notify(msg='重命名失败')		
 
 def getdirinfo(cid):
 	pageitems = {'0': 25,'1': 50,'2': 100}
@@ -1411,12 +1509,12 @@ def getfilelist(cid,offset,star,typefilter='0',searchstr='0',changesort='0'):
 						'path': plugin.url_for('searchinit',stypes='pan',sstr='0',modify='0',otherargs='{"cid":"%s"}'%(cid))})
 			stardisp=colorize_label('★星标过滤-'+('已启用' if star=='1' else '已禁用'), 'star'+str(star))
 			items.append({'label': stardisp,'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'star.png') ), 'path': plugin.url_for('getfilelist',cid=cid,offset=0,star='1' if star=='0' else '0',typefilter=typefilter,searchstr=searchstr,changesort='0')})
-			
-			sorttypedisp=colorize_label('文件排序:'+sorttypelist[int(cursorttype['s'])], 'sort')
-			items.append({'label': sorttypedisp, 'path': plugin.url_for('getfilelist',cid=cid,offset=0,star=star,typefilter=typefilter,searchstr=searchstr,changesort='1')})
 		else:
 			items.append({'label': '返回当前目录【%s】'%colorize_label(itemname, 'dir'),
 						'path': plugin.url_for('getfilelist',cid=cid,offset=0,star='0',typefilter=typefilter,searchstr='0',changesort='0')})
+		if data.has_key('order'):
+			sorttypedisp=colorize_label('文件排序:'+sorttypelist[int(cursorttype['s'])], 'sort')
+			items.append({'label': sorttypedisp, 'path': plugin.url_for('getfilelist',cid=cid,offset=0,star=star,typefilter=typefilter,searchstr=searchstr,changesort='1')})
 		typedisp=colorize_label('筛选:全部', 'filter')
 		if typefilter=='4':typedisp=colorize_label('筛选:视频', 'filter')
 		if typefilter=='2':typedisp=colorize_label('筛选:图片', 'filter')
@@ -1442,14 +1540,9 @@ def getfilelist(cid,offset,star,typefilter='0',searchstr='0',changesort='0'):
 				'path': plugin.url_for('getfilelist',cid=cid,offset=str(int(offset)+int(pageitem)),
 										star=star,typefilter=typefilter,searchstr=searchstr,changesort='0'),
 				'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'nextpage.png') ).decode('utf-8')})
-			#urlcache[cid+"/"+offset+"/"+str(star)] = items
-		#xbmc.executebuiltin('Container.SetViewMode(8)')
-		#skindir=xbmc.getSkinDir()
+		plugin.set_content('movies')
 		if imagecount >= 10 and imagecount * 2 > len(items):
 			setthumbnail['set']=True
-			#plugin.notify('setthumbnail')
-			#if ALL_VIEW_CODES['thumbnail'].has_key(skindir):
-			#	plugin.set_view_mode(ALL_VIEW_CODES['thumbnail'][skindir])
 		return items
 	else:
 		plugin.notify(msg='数据获取失败,错误信息:'+str(data['error']))
