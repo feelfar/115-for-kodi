@@ -8,7 +8,7 @@ import json,urllib,re
 from xbmcswift2 import Plugin
 plugin=Plugin()
 class torrentz2(object):
-	url = 'https://torrentz2.eu'
+	url = 'https://torrentz2.torrentbay.to/'
 	name = 'torrentz2'
 	support_sort=['relevance','addtime','size','popular'];
 	page_result_count=50;
