@@ -760,13 +760,13 @@ class CaptchaDlg(xbmcgui.WindowDialog):
 		self.addControl(self.button8)
 		self.button9 = xbmcgui.ControlButton(640+75+5, 460, 40, 40, '9')
 		self.addControl(self.button9)
-		
-		data = xl.urlopen('https://captchaapi.115.com/?ac=security_code&type=web')
-		if 'Set-Cookie' in data.headers:
-			signs = re.findall(r'[0-9a-z]{26}', data.headers['Set-Cookie'], re.DOTALL | re.MULTILINE)
-			if len( signs)>=1:
-				self.sign=signs[0]
-				
+		self.sign = xl.getcookieatt('.115.com', 'PHPSESSID')
+		if not self.sign:
+			data = xl.urlopen('https://captchaapi.115.com/?ac=security_code&type=web')
+			if 'Set-Cookie' in data.headers:
+				signs = re.findall(r'[0-9a-z]{26}', data.headers['Set-Cookie'], re.DOTALL | re.MULTILINE)
+				if len( signs)>=1:
+					self.sign=signs[0]
 		self.showcap()
 		
 	def showcap(self):
@@ -1124,7 +1124,7 @@ def pansearch(cid,mstr,offset):
 		return
 		
 def is_subtitle(ext):
-	return ext.lower() in ['srt', 'sub', 'ssa', 'smi', 'ass']
+	return ext.lower() in ['srt', 'idx', 'sub', 'ssa', 'smi', 'ass']
 	
 def getListItem(item,pathname=''):
 	#plugin.log.error(item)
@@ -1176,7 +1176,15 @@ def getListItem(item,pathname=''):
 			listitem=None
 			
 		if is_subtitle(item['ico']):
-			subcache[item['n'].encode('UTF-8')]=item['pc']
+			if item['ico'].lower()=='idx' or item['ico'].lower()=='sub':
+				subname=(item['n'][:item['n'].rfind('.')]+'.idx_sub').encode('UTF-8')
+				if subcache.raw_dict().has_key(subname):
+					subcache[subname][item['ico'].lower()]=item['pc']
+				else:
+					subcache[subname]={}
+					subcache[subname][item['ico'].lower()]=item['pc']
+			else:
+				subcache[item['n'].encode('UTF-8')]=item['pc']
 		
 		if item.has_key('u') and  listitem!=None:
 			listitem.set_thumbnail(item['u'])
@@ -1709,14 +1717,20 @@ def play(pc,name,iso):
 	if data['state']:
 		if data.has_key('subtitle_info') and str(stm)!='99':
 			for s in data['subtitle_info']:
-				sub_pcs[('_内置_'+s['title']).decode('utf-8')]=s['url']
+				sub_pcs[('_builtin_'+s['title']).decode('utf-8')]=s['url']
 	subpath=''
 	name=name[:name.rfind('.')].lower()
 	for k,v in subcache.items():
 		if k.lower().find(name)!= -1:
 			#plugin.notify(k)
 			#sub_pcs['_same_'+k]=get_file_download_url(v,'')
-			sub_pcs['_same_'+k]=xl.getfiledownloadurl(v,changeserver='',withcookie=True)
+			if k[k.rfind('.'):]=='.idx_sub':
+				if v.has_key('idx') and  v.has_key('sub'):
+					urlidx=xl.getfiledownloadurl(v['idx'],changeserver='',withcookie=True)
+					urlsub=xl.getfiledownloadurl(v['sub'],changeserver='',withcookie=True)
+					sub_pcs['_same_'+k]=urlidx+ ' ' +urlsub
+			else:
+				sub_pcs['_same_'+k]=xl.getfiledownloadurl(v,changeserver='',withcookie=True)
 	
 	if plugin.get_setting('subtitle')=='true':
 		try:
@@ -1742,8 +1756,22 @@ def play(pc,name,iso):
 			subpath = os.path.join( __subpath__,sub_pcs.keys()[sel])
 			suburl = sub_pcs[sub_pcs.keys()[sel]]
 	
-	if subpath!='':
-		if suburl!='':
+	if subpath!='' and suburl!='':
+		if subpath[subpath.rfind('.'):]=='.idx_sub':
+			subpath=subpath[:subpath.rfind('.')]
+			[urlidx,urlsub]=suburl.split(' ')
+			socket = xl.urlopen(urlidx)
+			subdata = xl.fetch(socket)
+			with open(subpath+'.idx', "wb") as subFile:
+				subFile.write(subdata)
+			subFile.close()
+			socket = xl.urlopen(urlsub)
+			subdata = xl.fetch(socket)
+			with open(subpath+'.sub', "wb") as subFile:
+				subFile.write(subdata)
+			subFile.close()
+			subpath=subpath+'.idx'
+		else:
 			socket = xl.urlopen(suburl)
 			subdata = xl.fetch(socket)
 			with open(subpath, "wb") as subFile:
@@ -1794,13 +1822,19 @@ def ffmpeg(pc,name):
 	if data['state']:
 		if data.has_key('subtitle_info') and str(stm)!='99':
 			for s in data['subtitle_info']:
-				sub_pcs[('_内置_'+s['title']).decode('utf-8')]=s['url']
+				sub_pcs[('_builtin_'+s['title']).decode('utf-8')]=s['url']
 	
 	for k,v in subcache.items():
 		if k.lower().find(name)!= -1:
 			#plugin.notify(k)
 			#sub_pcs['_same_'+k]=get_file_download_url(v,'')
-			sub_pcs['_same_'+k]=xl.getfiledownloadurl(v,changeserver='',withcookie=True)
+			if k[k.rfind('.'):]=='.idx_sub':
+				if v.has_key('idx') and  v.has_key('sub'):
+					urlidx=xl.getfiledownloadurl(v['idx'],changeserver='',withcookie=True)
+					urlsub=xl.getfiledownloadurl(v['sub'],changeserver='',withcookie=True)
+					sub_pcs['_same_'+k]=urlidx+ ' ' +urlsub
+			else:
+				sub_pcs['_same_'+k]=xl.getfiledownloadurl(v,changeserver='',withcookie=True)
 	
 	if plugin.get_setting('subtitle')=='true':
 		try:
@@ -1831,14 +1865,27 @@ def ffmpeg(pc,name):
 			subpath = os.path.join( ffmpegdowloadpath,sub_pcs.keys()[sel])
 			suburl = sub_pcs[sub_pcs.keys()[sel]]
 			
-	if subpath!='':
-		if suburl!='':
+	if subpath!='' and suburl!='':
+		if subpath[subpath.rfind('.'):]=='.idx_sub':
+			subpath=subpath[:subpath.rfind('.')]
+			[urlidx,urlsub]=suburl.split(' ')
+			socket = xl.urlopen(urlidx)
+			subdata = xl.fetch(socket)
+			with open(subpath+'.idx', "wb") as subFile:
+				subFile.write(subdata)
+			subFile.close()
+			socket = xl.urlopen(urlsub)
+			subdata = xl.fetch(socket)
+			with open(subpath+'.sub', "wb") as subFile:
+				subFile.write(subdata)
+			subFile.close()
+			subpath=subpath+'.idx'
+		else:
 			socket = xl.urlopen(suburl)
 			subdata = xl.fetch(socket)
 			with open(subpath, "wb") as subFile:
 				subFile.write(subdata)
 			subFile.close()
-			subpath=os.path.abspath(subpath)
 	
 	outputfname=os.path.abspath(xbmc.translatePath(os.path.join(ffmpegdowloadpath, name+ext)).decode("utf-8"))
 	batfname=xbmc.translatePath( os.path.join(ffmpegdowloadpath, name+'.bat') ).decode("utf-8")
@@ -2033,8 +2080,13 @@ def ffmpegdl(input,output,subtitle='',stm='-1'):
 	subtitlecs=''
 	subtitlets=''
 	if subtitle!='':
-		subtitle='-i "'+subtitle+'"'
-		subtitlecs='-c:s mov_text'
+		if subtitle[subtitle.rfind('.'):]=='.idx':
+			subtitle=subtitle[:subtitle.rfind('.')]
+			subtitle='-i "%s.idx" -i "%s.sub" '%(subtitle,subtitle)
+			subtitlecs='-c:s dvd_subtitle'
+		else:
+			subtitle='-i "'+subtitle+'"'
+			subtitlecs='-c:s mov_text'
 		subtitlets=times1
 	dlcmd='ffmpeg %s -i \"%s\" %s %s %s %s %s %s \"%s\"'%(times1,input,subtitlets,subtitle,ffmpegopt,subtitlecs,times2,timedt,output)
 	#dlcmd= u'ffmpeg %s -i \"%s\" %s %s %s %s %s \"%s\"'%(times1,input,subtitle,ffmpegopt,subtitlecs,times2,timedt,output)
