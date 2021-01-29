@@ -1729,17 +1729,17 @@ def play(pc,name,iso):
             subpath=subpath[:subpath.rfind('.')]
             [urlidx,urlsub]=suburl.split(' ')
             subdata = xl.urlopen(urlidx,byts=True)
-            with open(six.ensure_text(subpath+'.idx'), "wb") as subFile:
+            with open(six.ensure_binary(subpath+'.idx'), "wb") as subFile:
                 subFile.write(subdata)
             subFile.close()
             subdata = xl.urlopen(urlsub,byts=True)
-            with open(six.ensure_text(subpath+'.sub'), "wb") as subFile:
+            with open(six.ensure_binary(subpath+'.sub'), "wb") as subFile:
                 subFile.write(subdata)
             subFile.close()
             subpath=subpath+'.idx'
         else:
             subdata = xl.urlopen(suburl,byts=True)
-            with open(six.ensure_text(subpath), "wb") as subFile:
+            with open(six.ensure_binary(subpath), "wb") as subFile:
                 subFile.write(subdata)
             subFile.close()
 
