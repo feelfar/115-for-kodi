@@ -1,0 +1,108 @@
+# -*- coding: utf-8 -*-
+# commfunc.py
+from  __future__  import unicode_literals
+
+import sys
+
+import xbmc,json,gzip
+
+from traceback import format_exc
+
+import six
+from six.moves.urllib import parse
+from six.moves.urllib import request
+
+def get_installedversion():
+    # retrieve current installed version
+    json_query = xbmc.executeJSONRPC('{ "jsonrpc": "2.0", "method": "Application.GetProperties", "params": {"properties": ["version", "name"]}, "id": 1 }')
+    #json_query = unicode(json_query, 'utf-8', errors='ignore')
+    json_query = json.loads(json_query)
+    version=14
+    if 'result' in json_query:
+        if 'version' in json_query['result']:
+            version=int(json_query['result']['version']['major'])
+    return version
+version=get_installedversion()
+
+def keyboard(title=u'请输入搜索关键字',text=''):
+    buildinkb=False
+    kb=xbmc.Keyboard(text,title)
+    kb.doModal()
+    text=''
+    if kb.isConfirmed():
+        text=kb.getText()
+    return text
+
+class MyRedirectHandler(request.HTTPRedirectHandler):
+    def http_error_302(self, req, fp, code, msg, headers):
+        setcookie = str(headers["Set-Cookie"])
+        req.add_header("Cookie", setcookie)
+        return request.HTTPRedirectHandler.http_error_302(self, req, fp, code, msg, headers)
+
+def _http(url, data=None,referer=None,cookie=None):
+    #url=url
+    reponse=''
+    for i in range(1,5):
+        try:
+            req = request.Request(url)
+            req.add_header('User-Agent', 'Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Trident/5.0)')
+            req.add_header('Accept-encoding', 'gzip,deflate')
+            req.add_header('Accept-Language', 'zh-cn')
+            if cookie:
+                req.add_header('Cookie', cookie)
+            if referer:
+                req.add_header('Referer', referer)
+            opener = request.build_opener(MyRedirectHandler)
+            if data:
+                #data=data
+                rsp = opener.open(req, data=data, timeout=15)
+            else:
+                rsp = opener.open(req, timeout=15)
+            
+            if rsp.info().get('Content-Encoding') == 'gzip':
+                reponse = gzip.GzipFile(fileobj=six.BytesIO(rsp.read())).read()
+            else:
+                reponse = rsp.read()
+            reponse=six.ensure_text(reponse)
+            if 'Set-Cookie' in rsp.headers:
+                reponse='Set_Cookie:'+rsp.headers['Set-Cookie']+'\r'+reponse
+            rsp.close()
+            break
+        except Exception as e:
+            xbmc.log(msg=format_exc(),level=xbmc.LOGERROR)
+            
+    
+    return reponse
+
+def url_is_alive(url):
+    req = request.Request(url)
+    req.get_method = lambda : 'HEAD'
+    try:
+        response = request.urlopen(req)
+        return True
+    except:
+        xbmc.log(msg=format_exc(),level=xbmc.LOGERROR)
+        return False
+        
+def encode_obj(in_obj):
+    def encode_list(in_list):
+        out_list = []
+        for el in in_list:
+            out_list.append(encode_obj(el))
+        return out_list
+
+    def encode_dict(in_dict):
+        out_dict = {}
+        for k, v in in_dict.items():
+            out_dict[k] = encode_obj(v)
+        return out_dict
+
+    if isinstance(in_obj, six.text_type):
+        return six.ensure_binary(in_obj)
+    elif isinstance(in_obj, list):
+        return encode_list(in_obj)
+    elif isinstance(in_obj, tuple):
+        return tuple(encode_list(in_obj))
+    elif isinstance(in_obj, dict):
+        return encode_dict(in_obj)
+    return in_obj

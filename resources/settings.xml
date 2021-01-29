@@ -17,7 +17,6 @@
 	<setting id="imageext" type="text" label="图像文件扩展名" default="jpg,jpeg,bmp,tif,tiff,png,gif"/>
 	<setting id="showallfiles" type="bool" label="显示所有文件"  default="false"/>
 	<setting id="pageitem" type="enum" label="页面项目数" values="25|50|100" default="2"/>
-	<setting id="buildinkb" type="bool" label="使用内置键盘"  default="false"/>
 	<setting id="btmaxresult" type="enum" label="磁力搜索返回记录数" values="20|40|60|80|100" default="3"/>
   </category>    
   <category label="其它设置">

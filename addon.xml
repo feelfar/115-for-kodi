@@ -1,20 +1,23 @@
 ﻿<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <addon id="plugin.video.115"
-  name="115网盘"
-  version="0.2.6.0"
-  provider-name="yxblog, 2020-12 modify by feelfar">
-  <requires>
-	  <import addon="service.xbmc.versioncheck" optional="false"/>
-      <import addon="script.module.xbmcswift2" version="2.4.0" optional="false"/>
-	  <import addon="script.module.pycryptodome" version="3.4.3" optional="false"/>
-  </requires>
-  <extension point="xbmc.python.pluginsource" library="default.py">
-  <provides>image audio video</provides>
-  </extension>
-  <extension point="xbmc.addon.metadata">
-    <platform>all</platform>
-    <description>115网盘</description>
-    <description lang="zh">115网盘</description>
-    <disclaimer>本插件中提供的内容均来自互联网，仅供学习演示使用。</disclaimer>
-  </extension>
+name="115网盘"
+version="0.2.6.0"
+provider-name="yxblog, 2020-12 modify by feelfar">
+
+<requires>
+	<import addon="script.module.xbmcswift2" version="2.4.0" optional="false"/>
+	<import addon="script.module.pycryptodome" version="3.4.3" optional="false"/>
+</requires>
+<extension point="xbmc.python.pluginsource" library="default.py">
+	<provides>image audio video</provides>
+</extension>
+<extension point="xbmc.addon.metadata">
+	<assets>
+		<icon>resources/icon.png</icon>
+	</assets>
+	<platform>all</platform>
+	<description>115网盘</description>
+	<description lang="zh">115网盘</description>
+	<disclaimer>本插件中提供的内容均来自互联网，仅供学习演示使用。</disclaimer>
+</extension>
 </addon>
