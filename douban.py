@@ -236,6 +236,7 @@ def dbsubject(subject):
         news_strlist.sort(key=strlist.index)
         
         for sstr in news_strlist:
+            '''
             context_menu_items=[]
             context_menu_items.append(('搜索'+colorize_label(sstr, color='00FF00'), 
                 'RunPlugin('+plugin.url_for('searchinit',stypes='pan,bt',sstr=six.ensure_binary(sstr),modify='1',otherargs='{}')+')',))
@@ -246,7 +247,12 @@ def dbsubject(subject):
             if len(context_menu_items)>0 and listitem!=None:
                 listitem.add_context_menu_items(context_menu_items)
                 menus.append(listitem)
-            
+            '''
+            menus.append(ListItem(label='搜索:[COLOR FF00FFFF]%s[/COLOR]' % (six.ensure_text(sstr)),
+                label2=None, icon=None,
+                thumbnail=xbmc.translatePath( os.path.join( IMAGES_PATH, 'disksearch.png') ),
+                path=plugin.url_for('searchinit',stypes='pan,bt',sstr=six.ensure_binary(sstr),modify='1',otherargs='{}')))
+
         
         for cast in celes:
             thumb=cast['img']
@@ -302,7 +308,7 @@ def dbgettag():
     for intyear in range(2015,curyear+1):
         filters['年代标签'].insert(0, str(intyear))
         
-    filters['自定义标签']=plugin.get_setting('dbdeftag').lower().split(',')
+    filters['自定义标签']=six.ensure_text(plugin.get_setting('dbdeftag')).lower().split(',')
     
     sstr=''
     dialog = xbmcgui.Dialog()
@@ -337,7 +343,8 @@ def dbmovie(tags='',sort='U',page=0,addtag=0,scorerange='',year_range=''):
     if tags:
         taglist.extend(tags.split(','))
     if tag:
-        taglist.extend(tags.split(','))
+        taglist.append(six.ensure_text(tag))
+    #plugin.log.error(str(taglist))
     #if len(taglist)<1: return;
     tags=''
     for t in taglist:
@@ -385,9 +392,9 @@ def dbmovie(tags='',sort='U',page=0,addtag=0,scorerange='',year_range=''):
             yearhigh=ranges[selhigh]
             year_range='%s,%s'%(yearlow,yearhigh)
     
-    url='https://movie.douban.com/j/search_subjects?type=movie&tag=%s&sort=%s&page_limit=20&page_start=%s'%(tags.replace(' ','%20'),sort,str(page))
+    #url='https://movie.douban.com/j/search_subjects?type=movie&tag=%s&sort=%s&page_limit=20&page_start=%s'%(tags.replace(' ','%20'),sort,str(page))
     url='https://movie.douban.com/j/new_search_subjects?'+parse.urlencode(encode_obj({'tags':tags,'sort':sort,'range':scorerange,'genres':'','start':str(int(page)*20),'year_range':year_range}))
-    plugin.log.error(url)
+   
     try:
         rsp = _http(url)
         minfo = json.loads(rsp[rsp.index('{'):])

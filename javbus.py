@@ -174,6 +174,7 @@ def javdetail(qbbb='qb',movieno='0',id='0',title='0'):
                         'path': plugin.url_for('javmagnet', qbbb=qbbb, gid=gid,uc=uc),
                         'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'magnet.jpg') )})
     context_menu_items=[]
+    '''
     context_menu_items.append(('搜索'+colorize_label(id, color='00FF00'), 
         'RunPlugin('+plugin.url_for('searchinit',stypes='pan,bt',sstr=six.ensure_binary(id),modify='1',otherargs='{}')+')',))
         
@@ -196,7 +197,13 @@ def javdetail(qbbb='qb',movieno='0',id='0',title='0'):
     if len(context_menu_items)>0 and listitem!=None:
         listitem.add_context_menu_items(context_menu_items)
         menus.append(listitem)
-    
+    '''
+    menus.append(ListItem(label='搜索:[COLOR FF00FFFF]%s[/COLOR]' % (id),
+            thumbnail=xbmc.translatePath( os.path.join( IMAGES_PATH, 'disksearch.jpg') ), 
+            path=plugin.url_for('searchinit',stypes='pan,bt',sstr=six.ensure_binary(id),modify='1',otherargs='{}'),))
+    menus.append(ListItem(label='搜索:[COLOR FF00FFFF]%s[/COLOR]' % (title),
+            thumbnail=xbmc.translatePath( os.path.join( IMAGES_PATH, 'disksearch.jpg') ), 
+            path=plugin.url_for('searchinit',stypes='pan,bt',sstr=six.ensure_binary(title),modify='1',otherargs='{}'),))
     releech='"bigImage"\x20href="(?P<mainimg>.*?)"><'
     leech = re.compile(releech, re.S)
     movieid=''
