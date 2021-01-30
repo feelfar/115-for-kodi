@@ -201,7 +201,7 @@ def javdetail(qbbb='qb',movieno='0',id='0',title='0'):
     menus.append(ListItem(label='搜索:[COLOR FF00FFFF]%s[/COLOR]' % (id),
             thumbnail=xbmc.translatePath( os.path.join( IMAGES_PATH, 'disksearch.jpg') ), 
             path=plugin.url_for('searchinit',stypes='pan,bt',sstr=six.ensure_binary(id),modify='1',otherargs='{}'),))
-    menus.append(ListItem(label='搜索:[COLOR FF00FFFF]%s[/COLOR]' % (title),
+    menus.append(ListItem(label='搜索:[COLOR FF00FFFF]%s[/COLOR]' % (six.ensure_text(title)),
             thumbnail=xbmc.translatePath( os.path.join( IMAGES_PATH, 'disksearch.jpg') ), 
             path=plugin.url_for('searchinit',stypes='pan,bt',sstr=six.ensure_binary(title),modify='1',otherargs='{}'),))
     releech='"bigImage"\x20href="(?P<mainimg>.*?)"><'
@@ -340,11 +340,11 @@ def javdetail(qbbb='qb',movieno='0',id='0',title='0'):
     
     if movieid!='':
         menus.insert(1, {'label':'预告片',
-              'path': plugin.url_for('freepv', movieid=movieid), 
+              'path': plugin.url_for('freepv', movieid=six.ensure_binary(movieid)), 
               'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'movies.png') ),
               'is_playable':True, 
               'info_type':'video',
-              'info':{'title':title}
+              'info':{'title':six.ensure_text(title)}
               })
     setthumbnail['set']=True
     return menus
@@ -357,7 +357,7 @@ def freepv(movieid=''):
     subpath=xbmc.translatePath( os.path.join( __cwd__, 'sample.m3u8') )
     
     if movieid[0:3]=='bb,':
-        (bb,studio,movid)=movieid.split(',')
+        (bb,studio,movid)=six.ensure_text(movieid).split(',')
         
         if studio=='HEYZO':
             '''
