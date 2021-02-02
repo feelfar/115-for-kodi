@@ -358,6 +358,93 @@ class api_115(object):
         except:
             return False
             
+    def notecatelist(self):
+        data=self.urlopen('https://note.115.com/?ct=note&ac=cate&has_picknews=1')
+        return self.jsonload(data)
+        
+    def noteaddcate(self,cname):
+        data = parse.urlencode(encode_obj({'cname': cname,'up_key':'tn__%d_0'%(int(time.time()))}))
+        data=self.urlopen('https://note.115.com/?ct=note&ac=addcate',data=data)
+        return self.jsonload(data)
+
+    def notegetcateid(self,cname):
+        cid=0
+        data=self.notecatelist()
+        if data['state']:
+            for cate in data['data']:
+                if cate['cname']==cname:
+                    cid=int(cate['cid'])
+                    break
+        if cid==0:
+            data = self.noteaddcate(cname)
+            if data['state']:
+                cid=int(data['data']['cid'])
+        return cid
+    
+    def notesave(self,cid,nid,title,content):
+        data = parse.urlencode(encode_obj({'cid': cid,'nid':nid,'subject':title,'content':content,'is_html':0,'toc_ids':''}))
+        data = self.urlopen('https://note.115.com/?ct=note&ac=save',data=data)
+        return self.jsonload(data)
+        
+    def notelist(self,cid,start):
+        data = parse.urlencode(encode_obj({'ct':'note','page_size':90,'has_picknews':1,'cid': cid,'keyword':'','start':start,'_':int(time.time())}))
+        data = self.urlopen('https://note.115.com/?'+data)
+        return self.jsonload(data)
+    
+    def notedelete(self,nid):
+        data = parse.urlencode(encode_obj({'nid': id}))
+        data = self.urlopen('https://note.115.com/?ct=note&ac=delete',data=data)
+        return self.jsonload(data)
+        
+    def notedetail(self,nid):
+        data = parse.urlencode(encode_obj({'ct': 'note','nid':nid,'ac':'detail'}))
+        data = self.urlopen('https://note.115.com/?'+data)
+        return self.jsonload(data)
+            
+    def notegetcontent(self,cname,notetitle):
+        content=''
+        cid=self.notegetcateid(cname)
+        data=self.notelist(cid=cid,start=0)
+        nid=0
+        if data['state']:
+            for note in data['data']:
+                if note['title']==notetitle:
+                    nid=int(note['nid'])
+                    break
+        if nid:
+            data = self.notedetail(nid)
+            if data['state']:
+                content=data['data']['content']
+        return content
+            
+    def notesavecontent(self,cname,notetitle,content):
+        state=False
+        cid=self.notegetcateid(cname)
+        data=self.notelist(cid=cid,start=0)
+        nid=0
+        if data['state']:
+            for note in data['data']:
+                if note['title']==notetitle:
+                    nid=int(note['nid'])
+                    break
+        
+        data = self.notesave(cid=cid,nid=nid,title=notetitle,content=content)
+        state = data['state']
+        return state
+                    
+    def notedeleteolds(self,cname):
+        state=False
+        cid=self.notegetcateid(cname)
+        data=self.notelist(cid=cid,start=90)
+        nids=''
+        if data['state']:
+            for note in data['data']:
+                nids=nids+note['nid']+','
+        if nids:
+            data = self.notedelete(nid=nids)
+            state = data['state']
+        return state
+        
     def getcookiesstr(self):
         cookies=''
         try:
@@ -481,14 +568,14 @@ wlHF+mkTJpKd5Wacef0vV+xumqNorvLpIXWKwxNaoHM=
             #message=self.scipher.decrypt(rettemp,sentinel)
             #digest = SHA.new(message[:-dsize]).digest()
             #if digest==message[-dsize:]:                # Note how we DO NOT look for the sentinel
-            #	plugin.log.error("Encryption was correct.")
+            #    plugin.log.error("Encryption was correct.")
             #else:
-            #	plugin.log.error("Encryption was not correct.")
+            #    plugin.log.error("Encryption was not correct.")
             ret.extend(message)
         #ssss=0
         #for ss in ret:
-        #	plugin.log.error('%d:%d'%(ssss,ord(ss)))
-        #	ssss+=1
+        #    plugin.log.error('%d:%d'%(ssss,ord(ss)))
+        #    ssss+=1
         return ret
         
     def m115_encode(self,src, tm):
@@ -536,7 +623,11 @@ wlHF+mkTJpKd5Wacef0vV+xumqNorvLpIXWKwxNaoHM=
         data= self.jsonload(data)
         if data['state']:
             result=data['file_url']
-        else:
+        if not result:
+            content=self.notegetcontent(cname='pickcodeurl',notetitle=pc)
+            if content:
+                result=content
+        if not result:
             tm = str(int(int(time.time())))
             pcencode = self.m115_encode((json.dumps({'pickcode': pc})).replace(' ',''),tm)
             #plugin.notify(parse.urlencode(encode_obj({'data':pcencode['data']})))
@@ -561,7 +652,7 @@ wlHF+mkTJpKd5Wacef0vV+xumqNorvLpIXWKwxNaoHM=
         
             if 'url' in jsondata:
                 result = jsondata['url']['url']
-        #plugin.log.error(result)
+                self.notesavecontent(cname='pickcodeurl',notetitle=pc,content=result)
         if withcookie:
             cookies=''
             try:
@@ -1187,10 +1278,10 @@ def getListItem(item,pathname=''):
         for tag in item['fl']:
             fl=fl+tag['id']+','
             if len(tag['color'])==7:
-            	
-            	#listitem.label=listitem.label
+                
+                #listitem.label=listitem.label
                 listitem.label=six.ensure_binary(colorize_label('●', color=tag['color'][1:]))+six.ensure_binary(listitem.label)
-    context_menu_items.append((colorize_label('设置标签',color='00CCCC'), 'RunPlugin('+plugin.url_for('settag',fid=fid,fllist=fl)+')',))		
+    context_menu_items.append((colorize_label('设置标签',color='00CCCC'), 'RunPlugin('+plugin.url_for('settag',fid=fid,fllist=fl)+')',))        
     if 'm' in item and  listitem!=None:
         listitem.set_property('is_mark',str(item['m']))
         listitem.label=six.ensure_binary(colorize_label('★', 'star'+six.text_type(item['m'])))+six.ensure_binary(listitem.label)
@@ -1256,7 +1347,7 @@ def rename(fid,filename):
         return
     if newname==filename:
         return
-    result = xl.rename(fid,newname)	
+    result = xl.rename(fid,newname)    
     if result:
         xbmc.executebuiltin('Container.Refresh()')
     else:
@@ -1283,7 +1374,7 @@ def settag(fid,fllist):
                 seltags=seltags+tagidlist[tag]+','
             except:
                 pass
-    result = xl.settag(fid,seltags)	
+    result = xl.settag(fid,seltags)    
     if result:
         xbmc.executebuiltin('Container.Refresh()')
     else:
@@ -1351,7 +1442,7 @@ def getdir(cid,title):
                     selectlist.append((item[0],colorize_label('返回到【'+item[1]+'】',color='0044FF')))
                 else:
                     #if len(dirname)>30:
-                    #	dirname='..'+dirname[-28:]
+                    #    dirname='..'+dirname[-28:]
                     selectlist.append((item[0],colorize_label('移动到【'+item[1]+'】',color='00FF44')))
             for item in dirinfo['subdirs']:
                 selectlist.append((item[0],item[1]))
@@ -1449,7 +1540,7 @@ def getfilelist(cid,offset,star,typefilter='0',searchstr='0',changesort='0'):
         itemname='root'
         milkname='115'
         if cid!='0':
-            items.append({'label': colorize_label('返回到【%s】'%colorize_label('root', 'dir'),'back'), 'path': plugin.url_for('getfilelist',cid=0,	offset=0,star='0',typefilter=0,searchstr='0',changesort='0')})
+            items.append({'label': colorize_label('返回到【%s】'%colorize_label('root', 'dir'),'back'), 'path': plugin.url_for('getfilelist',cid=0,    offset=0,star='0',typefilter=0,searchstr='0',changesort='0')})
         if 'path' in data:
             for item in data['path']:
                 if item['cid']!=0 and item['cid']!=cid:
@@ -1459,7 +1550,7 @@ def getfilelist(cid,offset,star,typefilter='0',searchstr='0',changesort='0'):
                     milkname=itemname
         if 'folder' in data:
             #if 'pid' in data['folder']:
-            #	items.append({'label': colorize_label('返回到【%s】'%colorize_label(data['folder']['pid'], 'dir'),'back'), 'path': plugin.url_for('getfilelist',cid=data['folder']['pid'],offset=0,star='0',typefilter=0,searchstr='0',changesort='0')})
+            #    items.append({'label': colorize_label('返回到【%s】'%colorize_label(data['folder']['pid'], 'dir'),'back'), 'path': plugin.url_for('getfilelist',cid=data['folder']['pid'],offset=0,star='0',typefilter=0,searchstr='0',changesort='0')})
             if 'name' in data['folder']:
                 itemname=data['folder']['name']
                 milkname=itemname
@@ -1517,7 +1608,7 @@ def getfilelist(cid,offset,star,typefilter='0',searchstr='0',changesort='0'):
         return
 
 def getimgurl(pc):
-    data=xl.urlopen('http://web.api.115.com/files/image?pickcode='+pc+'&_='+str(int(time.time())))		
+    data=xl.urlopen('http://web.api.115.com/files/image?pickcode='+pc+'&_='+str(int(time.time())))        
     data=json.loads(data[data.index('{'):])
     imageurl=''
     if data['state']:
@@ -1627,7 +1718,7 @@ def getvideourl(pc,fid,stm,name=''):
         if changeserver=='-1':
             return '-1'
         #if changeserver!='':
-        #	plugin.notify('CDN服务器:'+changeserver)
+        #    plugin.notify('CDN服务器:'+changeserver)
         playmode=str(plugin.get_setting('playmode'))
         videourl=xl.getfiledownloadurl(pc,changeserver=changeserver,withcookie=True)
         match = re.search("//(?P<CDN>.*115\x2ecom)/", videourl, re.IGNORECASE | re.DOTALL)
@@ -1772,6 +1863,7 @@ def ffmpeg(pc,name):
         return
     plugin.log.error(videourl)
     ext='.mp4'
+    name=six.ensure_text(name)
     #if str(stm)=='99':
         #ext=name[name.rfind('.'):].lower()
     name=name[:name.rfind('.')].lower()
@@ -1845,11 +1937,11 @@ def ffmpeg(pc,name):
     outputfname=os.path.abspath(xbmc.translatePath(os.path.join(ffmpegdowloadpath, name+ext)))
     batfname=xbmc.translatePath( os.path.join(ffmpegdowloadpath, name+'.bat') )
     with open(batfname, "wb") as batFile:
-        batFile.write(ffmpegdl(videourl,outputfname,subpath,stm).encode('gbk'))
+        batFile.write(ffmpegdl(videourl,outputfname,subpath,stm).encode('utf-8'))
         
     batFile.close()
-    #plugin.notify("已在/Download/115/ffmpegdowload/目录下生成bat文件")
-    plugin.notify(batfname)
+    plugin.notify('已在/Download/115/ffmpegdowload/目录下生成bat文件')
+    #plugin.notify(batfname)
     
 @plugin.route('/offline_bt/<sha1>')
 def offline_bt(sha1):
@@ -1969,7 +2061,7 @@ def shellopen(pc,fname):
 @plugin.route('/m3u8/<cid>/<offset>/<star>/<typefilter>/<searchstr>/<name>')
 def m3u8(cid,offset,star,typefilter='0',searchstr='0',name='0'):
     stm='0'
-    qtyps=[]		
+    qtyps=[]        
     qtyps.append(('标清','800000'))
     qtyps.append(('高清','1200000'))
     qtyps.append(('超清','1800000'))
@@ -2042,6 +2134,10 @@ def ffmpegdl(input,output,subtitle='',stm='-1'):
             subtitle='-i "'+subtitle+'"'
             subtitlecs='-c:s mov_text'
         subtitlets=times1
+    plugin.log.error(input)
+    plugin.log.error(output)
+    output=six.ensure_text(output)
+    
     dlcmd='ffmpeg %s -i \"%s\" %s %s %s %s %s %s \"%s\"'%(times1,input,subtitlets,subtitle,ffmpegopt,subtitlecs,times2,timedt,output)
     #dlcmd= u'ffmpeg %s -i \"%s\" %s %s %s %s %s \"%s\"'%(times1,input,subtitle,ffmpegopt,subtitlecs,times2,timedt,output)
     
