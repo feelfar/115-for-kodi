@@ -98,6 +98,7 @@ class api_115(object):
                 self.opener = request.build_opener(
                     request.HTTPCookieProcessor(self.cookiejar))
             except:
+                xbmc.log(msg=format_exc(),level=xbmc.LOGERROR)
                 os.remove(cookiefile)
         else:
             self.opener = None
@@ -230,7 +231,7 @@ class api_115(object):
         #plugin.log.error(url)
         if 'cookie' in args:
             cookiename,cookievalue=args['cookie'].split('=')
-            cook=self.make_cookie(cookiename, cookievalue, '.115.com')
+            cook=self.make_cookie(cookiename, cookievalue, '115.com')
             self.cookiejar.set_cookie(cook)
             del args['cookie']
             
@@ -311,7 +312,7 @@ class api_115(object):
         return self.jsonload(data)
     
     def offline(self,url):
-        uid = self.getcookieatt('.115.com', 'UID')
+        uid = self.getcookieatt('UID')
         uid = uid[:uid.index('_')]
         data = parse.urlencode(encode_obj({'url': url,'uid':uid,'time':str(int(time.time()))}))
         data=self.urlopen("http://115.com/web/lixian/?ct=lixian&ac=add_task_url",data=data)
@@ -319,7 +320,7 @@ class api_115(object):
         return data
         
     def offline_list(self):
-        uid = self.getcookieatt('.115.com', 'UID')
+        uid = self.getcookieatt('UID')
         uid = uid[:uid.index('_')]
         page=1
         task=[]
@@ -370,7 +371,7 @@ class api_115(object):
     def notegetcateid(self,cname):
         cid=0
         data=self.notecatelist()
-        if data['state']:
+        if data['state'] and data['data']:
             for cate in data['data']:
                 if cate['cname']==cname:
                     cid=int(cate['cid'])
@@ -406,7 +407,7 @@ class api_115(object):
         cid=self.notegetcateid(cname)
         data=self.notelist(cid=cid,start=0)
         nid=0
-        if data['state']:
+        if data['state'] and data['data']:
             for note in data['data']:
                 if note['title']==notetitle:
                     nid=int(note['nid'])
@@ -416,18 +417,41 @@ class api_115(object):
             if data['state']:
                 content=data['data']['content']
         return content
+
+    def notegetpcurl(self,pc):
+        content=''
+        cid=self.notegetcateid('pickcodeurl')
+        data=self.notelist(cid=cid,start=0)
+        nid=0
+        nidolds=''
+        if data['state'] and data['data']: 
+            curtime = int(time.time())
+            for note in data['data']:
+                if curtime > int(note['create_time'])+60*3600:
+                    nidolds+=note['nid']+','
+                else:
+                    if note['title']==pc:
+                        nid=int(note['nid'])
+                        break
+        if nidolds:
+             self.notedelete(nidolds)
+        if nid:
+            data = self.notedetail(nid)
+            if data['state']:
+                content=data['data']['content']
+        return content
+            
             
     def notesavecontent(self,cname,notetitle,content):
         state=False
         cid=self.notegetcateid(cname)
         data=self.notelist(cid=cid,start=0)
         nid=0
-        if data['state']:
+        if data['state'] and data['data']:
             for note in data['data']:
                 if note['title']==notetitle:
                     nid=int(note['nid'])
                     break
-        
         data = self.notesave(cid=cid,nid=nid,title=notetitle,content=content)
         state = data['state']
         return state
@@ -437,7 +461,7 @@ class api_115(object):
         cid=self.notegetcateid(cname)
         data=self.notelist(cid=cid,start=90)
         nids=''
-        if data['state']:
+        if data['state'] and data['data']:
             for note in data['data']:
                 nids=nids+note['nid']+','
         if nids:
@@ -448,9 +472,9 @@ class api_115(object):
     def getcookiesstr(self):
         cookies=''
         try:
-            for k,v in self.cookiejar._cookies['.115.com']['/'].items():
-                cookies+=str(k)+'='+str(v.value)+';'
-            cookies=parse.quote_plus(cookies)
+            for cookie in self.cookiejar:
+                if cookie.domain.find('115.')>=0:
+                    cookies+=str(cookie.name)+'='+str(cookie.value)+';'
             return cookies
         except:
             return ''
@@ -624,7 +648,7 @@ wlHF+mkTJpKd5Wacef0vV+xumqNorvLpIXWKwxNaoHM=
         if data['state']:
             result=data['file_url']
         if not result:
-            content=self.notegetcontent(cname='pickcodeurl',notetitle=pc)
+            content=self.notegetpcurl(pc=pc)
             if content:
                 result=content
         if not result:
@@ -656,15 +680,12 @@ wlHF+mkTJpKd5Wacef0vV+xumqNorvLpIXWKwxNaoHM=
         if withcookie:
             cookies=''
             try:
-                if '.115.com' in self.cookiejar._cookies:
-                    for k,v in self.cookiejar._cookies['.115.com']['/'].items():
-                        cookies+=str(k)+'='+str(v.value)+';'
-                if '115.com' in self.cookiejar._cookies:
-                    for k,v in self.cookiejar._cookies['115.com']['/'].items():
-                        cookies+=str(k)+'='+str(v.value)+';'
-                #plugin.notify(self.downcookie)
+                for cookie in self.cookiejar:
+                    if cookie.domain.find('115.')>=0:
+                        cookies+=str(cookie.name)+'='+str(cookie.value)+';'
                 cookies+=self.downcookie+';'
             except Exception as e:
+                xbmc.log(msg=format_exc(),level=xbmc.LOGERROR)
                 plugin.log.error('zzzdebug:%s'%e)
                 os.remove(cookiefile)
             #return result+'|Cookie='+cookies
@@ -713,11 +734,12 @@ wlHF+mkTJpKd5Wacef0vV+xumqNorvLpIXWKwxNaoHM=
         if withcookie:
             cookies=''
             try:
-                for k,v in self.cookiejar._cookies['.115.com']['/'].items():
-                    cookies+=str(k)+'='+str(v.value)+';'
-                cookies+=self.downcookie+';'
+                for cookie in self.cookiejar:
+                    if cookie.domain.find('115.')>=0:
+                        cookies+=str(cookie.name)+'='+str(cookie.value)+';'
                 #cookies=parse.quote_plus(cookies)
             except:
+                xbmc.log(msg=format_exc(),level=xbmc.LOGERROR)
                 os.remove(cookiefile)
             #return result+'|Cookie='+cookies
             #return result+'&'+cookies
@@ -759,11 +781,13 @@ wlHF+mkTJpKd5Wacef0vV+xumqNorvLpIXWKwxNaoHM=
             rest=None
         )
     
-    def getcookieatt(self, domain, attr):
-        if domain in self.cookiejar._cookies and attr in \
-           self.cookiejar._cookies[domain]['/']:
-            return self.cookiejar._cookies[domain]['/'][attr].value
-            
+    def getcookieatt(self, domain, cookiename):
+        for cookie in self.cookiejar:
+            if cookie.domain.find('115.')>=0:
+                if cookie.name==cookiename:
+                    return cookie.value
+        return ''
+        
     def depass(self,ac,ps,co):
         eac=hashlib.sha1(ac).hexdigest()
         eps=hashlib.sha1(ps).hexdigest()
@@ -834,7 +858,7 @@ class CaptchaDlg(xbmcgui.WindowDialog):
         self.addControl(self.button8)
         self.button9 = xbmcgui.ControlButton(640+75+5, 460, 40, 40, '9')
         self.addControl(self.button9)
-        self.sign = xl.getcookieatt('.115.com', 'PHPSESSID')
+        self.sign = xl.getcookieatt('PHPSESSID')
         if not self.sign:
             data = xl.urlopen('https://captchaapi.115.com/?ac=security_code&type=web')
             if 'Set-Cookie' in data.headers:
@@ -969,9 +993,8 @@ def setting():
 
 @plugin.route('/')
 def index():
-    #pageresult = _http('http://nanrencili.vip/list/%E4%B8%89%E4%B8%8A%E6%82%A0%E4%BA%9A/4/2/0.html')
-    #pageresult=html_parser.unescape(pageresult)
-    #plugin.log.error(pageresult)
+    #plugin.log.error(xl.notecatelist())
+    plugin.log.error(str(xl.notedeleteolds('pickcodeurl')))
     
     items = [
         {'label': '网盘文件', 'path': plugin.url_for('getfilelist',cid='0',offset=0,star='0',typefilter=0,searchstr='0',changesort='0'),'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'icon.png') )},
@@ -1178,7 +1201,7 @@ def pansearch(cid,mstr,offset):
             
         return items
     else:
-        plugin.notify(msg='数据获取失败,错误信息:'+str(data['error']))
+        plugin.notify(msg='数据获取失败,错误信息:'+six.ensure_text(data['error']))
         login()
         return
         
@@ -1317,7 +1340,7 @@ def deletefile(pid,fid,warringmsg):
             if data['state']:
                 xbmc.executebuiltin('Container.Refresh()')
             else:
-                plugin.notify(msg='删除失败,错误信息:'+str(data['error']))
+                plugin.notify(msg='删除失败,错误信息:'+six.ensure_text(data['error']))
                 return
         except:
             plugin.notify(msg='删除失败')
@@ -1333,7 +1356,7 @@ def mark(fid,mark):
         if data['state']:
             xbmc.executebuiltin('Container.Refresh()')
         else:
-            plugin.notify(msg='星标失败,错误信息:'+str(data['error']))
+            plugin.notify(msg='星标失败,错误信息:'+six.ensure_text(data['error']))
             return
     except:
             plugin.notify(msg='星标失败')
@@ -1421,7 +1444,7 @@ def createdir(pid,cname):
         if data['state']:
             return data['cid']
         else:
-            plugin.notify(msg='新建文件夹失败,错误信息:'+str(data['error']))
+            plugin.notify(msg='新建文件夹失败,错误信息:'+six.ensure_text(data['error']))
             return pid
     except:
             plugin.notify(msg='新建文件夹失败')
@@ -1476,7 +1499,7 @@ def move(fid,filename):
             if data['state']:
                 xbmc.executebuiltin('Container.Refresh()')
             else:
-                plugin.notify(msg='移动失败,错误信息:'+str(data['error']))
+                plugin.notify(msg='移动失败,错误信息:'+six.ensure_text(data['error']))
                 return
         except:
                 plugin.notify(msg='移动失败')
@@ -1519,18 +1542,7 @@ def getfilelist(cid,offset,star,typefilter='0',searchstr='0',changesort='0'):
     data=getfilelistdata(cid,offset,star,typefilter,searchstr)
     #plugin.log.error(str(data))
     if data['state']:
-        '''
-        cookies=''
-        cookiedict={}
-        plugin.log.error([q[1] for q in xl.cookiejar._cookies['.115.com']['/'].items()])
-        for k,v in xl.cookiejar._cookies:
-            cookiedict[str(k)]=str(v.value)
-        cookiestr=json.dumps(cookiedict)
-        cookiestrfile = xbmc.translatePath(os.path.join(__cwd__, 'cookie.txt'))
-        with open(cookiestrfile, "wb") as cookietxtFile:
-            cookietxtFile.write(cookiestr)
-            cookietxtFile.close()
-        '''
+
         #playlistvideo = xbmc.PlayList(xbmc.PLAYLIST_VIDEO)
         #playlistvideo.clear()
         
@@ -1603,7 +1615,7 @@ def getfilelist(cid,offset,star,typefilter='0',searchstr='0',changesort='0'):
             setthumbnail['set']=True
         return items
     else:
-        plugin.notify(msg='数据获取失败,错误信息:'+str(data['error']))
+        plugin.notify(msg='数据获取失败,错误信息:'+six.ensure_text(data['error']))
         login()
         return
 
@@ -1621,20 +1633,6 @@ def playimg(pc,name):
     xbmc.executebuiltin("ShowPicture(%s)" % (imgurl))
     return
     
-def renavitoext():
-    for k,v in renameext.items():
-        xl.rename(k,v)
-    renameext.clear()
-
-def renexttoavi(data):
-    exts=['.mp4','.mkv','.iso']
-    if data['state']:
-        if 'file_name' in data:
-            if exts.count(data['file_name'][-4:].lower())>0:
-                xl.rename(data['file_id'],data['file_name']+'.avi')
-                time.sleep(2)
-                renameext[data['file_id']]=data['file_name']
-
 def getstm(data,iso,stm):
     if iso=='1':
         return '99'
@@ -1793,7 +1791,7 @@ def play(pc,name,iso):
     
     if plugin.get_setting('subtitle')=='true':
         try:
-            uid = xl.getcookieatt('.115.com', 'UID')
+            uid = xl.getcookieatt('UID')
             uid = uid[:uid.index('_')]
             data=xl.urlopen('http://web.api.115.com/movies/subtitle?pickcode='+pc)
             data=json.loads(data[data.index('{'):])
@@ -1888,7 +1886,7 @@ def ffmpeg(pc,name):
     
     if plugin.get_setting('subtitle')=='true':
         try:
-            uid = xl.getcookieatt('.115.com', 'UID')
+            uid = xl.getcookieatt('UID')
             uid = uid[:uid.index('_')]
             data=xl.urlopen('http://web.api.115.com/movies/subtitle?pickcode='+pc)
             data=json.loads(data[data.index('{'):])
@@ -1948,7 +1946,7 @@ def offline_bt(sha1):
     dialog = xbmcgui.Dialog()
     ret = dialog.yesno('115网盘提示', '是否离线文件?')
     if ret:
-        uid = xl.getcookieatt('.115.com', 'UID')
+        uid = xl.getcookieatt('UID')
         uid = uid[:uid.index('_')]
         data=xl.urlopen('http://115.com/?ct=offline&ac=space&_='+str(int(time.time())))
         data=json.loads(data[data.index('{'):])
@@ -2002,14 +2000,14 @@ def delete_offline_list(hashinfo,warringmsg):
         if data['state']:
             xbmc.executebuiltin('Container.Refresh()')
         else:
-            plugin.notify(msg='删除失败,错误信息:'+str(data['error']))
+            plugin.notify(msg='删除失败,错误信息:'+six.ensure_text(data['error']))
             return
 
 @plugin.route('/offline_list')
 def offline_list():
     msg_st={'-1': '任务失败','0': '任务停止','1': '下载中','2': '下载完成'}
     task=xl.offline_list()
-    uid = xl.getcookieatt('.115.com', 'UID')
+    uid = xl.getcookieatt('UID')
     uid = uid[:uid.index('_')]
     items=[]
     clearcomplete={'time':str(int(time.time())),'uid':uid}
