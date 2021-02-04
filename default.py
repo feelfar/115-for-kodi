@@ -781,7 +781,7 @@ wlHF+mkTJpKd5Wacef0vV+xumqNorvLpIXWKwxNaoHM=
             rest=None
         )
     
-    def getcookieatt(self, domain, cookiename):
+    def getcookieatt(self, cookiename):
         for cookie in self.cookiejar:
             if cookie.domain.find('115.')>=0:
                 if cookie.name==cookiename:
