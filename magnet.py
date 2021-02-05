@@ -10,7 +10,7 @@ except AttributeError:
 import comm,six
 from xbmcswift2 import ListItem
 plugin = comm.plugin
-__cwd__=comm.__cwd__
+IMAGES_PATH = comm.IMAGES_PATH
 from commfunc import keyboard,_http,encode_obj
 
 import nova2
@@ -26,8 +26,7 @@ def btsearchInit(sstr='',modify='0'):
     
     items=[]
     items.append({'label': '编辑搜索关键字[COLOR FF00FFFF]%s[/COLOR]'%(six.ensure_text(sstr)),
-                'path': plugin.url_for('btsearchInit', sstr=six.ensure_binary(sstr), modify='1'),
-                'thumbnail':xbmc.translatePath( os.path.join( __cwd__, 'magnet.jpg') )})
+                'path': plugin.url_for('btsearchInit', sstr=six.ensure_binary(sstr), modify='1')})
     items.append({'label': '按[COLOR FFFF00FF]%s[/COLOR]全搜索[COLOR FF00FFFF]%s[/COLOR]'%('相关度',six.ensure_text(sstr)), 
                 'path': plugin.url_for('btsearch',enginestr='all',sstr=six.ensure_binary(sstr),sorttype='relevance')})
     items.append({'label': '按[COLOR FFFF00FF]%s[/COLOR]全搜索[COLOR FF00FFFF]%s[/COLOR]'%('创建时间',six.ensure_text(sstr)), 
@@ -43,7 +42,8 @@ def btsearchInit(sstr='',modify='0'):
     
     for btengine in btenginelist:
         items.append({'label': '在[COLOR FFFFFF00]%s[/COLOR]搜索[COLOR FF00FFFF]%s[/COLOR]'%(btengine,six.ensure_text(sstr)),
-                'path': plugin.url_for('btsearch',enginestr=btengine,sstr=six.ensure_binary(sstr),sorttype='-1')})
+                'path': plugin.url_for('btsearch',enginestr=btengine,sstr=six.ensure_binary(sstr),sorttype='-1'),
+                'thumbnail':xbmc.translatePath(os.path.join( IMAGES_PATH, 'magnet.png')) })
     return items
 
 def anySizeToBytes(size_string):

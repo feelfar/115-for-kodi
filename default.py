@@ -226,7 +226,7 @@ class api_115(object):
             return {'state':False, 'message':'Login Error'}
         
         
-    def urlopen(self, url, byts=False, **args):
+    def urlopen(self, url,justrsp=False, binary=False, **args):
         if self.opener == None: return '{"state":False, "error":"please Login"}'
         #plugin.log.error(url)
         if 'cookie' in args:
@@ -253,7 +253,9 @@ class api_115(object):
                 headers.update(params)
             rsp = self.opener.open(
                 request.Request(url, headers=headers, **args), timeout=60)
-            content = b''    
+            if justrsp:
+                return rsp;
+            content = b''
             try:
                 if 'Set-Cookie' in rsp.headers:
                     downcookies = re.findall(r'(?:[0-9abcdef]{20,}|acw_tc)\s*\x3D\s*[0-9abcdef]{20,}', str(rsp.headers), re.DOTALL | re.MULTILINE)
@@ -267,7 +269,7 @@ class api_115(object):
                     content = rsp.read()
             except:
                 pass
-            if byts:
+            if binary:
                 return content
             else:
                 return six.ensure_text(content)
@@ -860,7 +862,7 @@ class CaptchaDlg(xbmcgui.WindowDialog):
         self.addControl(self.button9)
         self.sign = xl.getcookieatt('PHPSESSID')
         if not self.sign:
-            data = xl.urlopen('https://captchaapi.115.com/?ac=security_code&type=web')
+            data = xl.urlopen('https://captchaapi.115.com/?ac=security_code&type=web',justrsp=True)
             if 'Set-Cookie' in data.headers:
                 signs = re.findall(r'[0-9a-z]{26}', data.headers['Set-Cookie'], re.DOTALL | re.MULTILINE)
                 if len( signs)>=1:
@@ -871,8 +873,7 @@ class CaptchaDlg(xbmcgui.WindowDialog):
         #capemptyfilepath=xbmc.translatePath( os.path.join( IMAGES_PATH, 'capempty.png') )
         #self.capimg.setImage(capemptyfilepath,useCache=False)
         
-        socket = xl.urlopen( 'https://captchaapi.115.com/?ct=index&ac=code',cookie='PHPSESSID='+self.sign)
-        pngdata = socket.read()
+        pngdata = xl.urlopen( 'https://captchaapi.115.com/?ct=index&ac=code',cookie='PHPSESSID='+self.sign,binary=True)
         capfilepath=xbmc.translatePath( os.path.join( __temppath__, 'cap%s.png'%(uuid.uuid4().hex)) )
         with open(capfilepath, "wb") as capFile:
             capFile.write(pngdata)
@@ -880,14 +881,12 @@ class CaptchaDlg(xbmcgui.WindowDialog):
         self.capimg.setImage(capfilepath,useCache=False)
         #os.remove(capfilepath)
         #self.capimg.setImage('https://captchaapi.115.com/?ct=index&ac=code',useCache=False)
-        socket = xl.urlopen( 'https://captchaapi.115.com/?ct=index&ac=code&t=all',cookie='PHPSESSID='+self.sign)
-        pngdata = socket.read()
+        pngdata = xl.urlopen( 'https://captchaapi.115.com/?ct=index&ac=code&t=all',cookie='PHPSESSID='+self.sign,binary=True)
         capallfilepath=xbmc.translatePath( os.path.join( __temppath__, 'capall%s.png'%(uuid.uuid4().hex)) )
         with open(capallfilepath, "wb") as capallFile:
             capallFile.write(pngdata)
         capallFile.close()
         self.capallimg.setImage(capallfilepath,useCache=False)
-        
         capemptyfilepath=xbmc.translatePath( os.path.join( IMAGES_PATH, 'capempty.png') )
         self.capimg1.setImage(capemptyfilepath)
         self.capimg2.setImage(capemptyfilepath)
@@ -896,38 +895,37 @@ class CaptchaDlg(xbmcgui.WindowDialog):
         self.caplist=[-1,-1,-1,-1]
         
     def onControl(self,controlId):
-        if controlId==self.buttonreset:
+        if controlId.getId()==self.buttonreset.getId():
             self.showcap()
             return
             
         selectval=-1
         
-        if controlId==self.button0:
+        if controlId.getId()==self.button0.getId():
             selectval=0
-        if controlId==self.button1:
+        if controlId.getId()==self.button1.getId():
             selectval=1
-        if controlId==self.button2:
+        if controlId.getId()==self.button2.getId():
             selectval=2
-        if controlId==self.button3:
+        if controlId.getId()==self.button3.getId():
             selectval=3
-        if controlId==self.button4:
+        if controlId.getId()==self.button4.getId():
             selectval=4
-        if controlId==self.button5:
+        if controlId.getId()==self.button5.getId():
             selectval=5
-        if controlId==self.button6:
+        if controlId.getId()==self.button6.getId():
             selectval=6
-        if controlId==self.button7:
+        if controlId.getId()==self.button7.getId():
             selectval=7
-        if controlId==self.button8:
+        if controlId.getId()==self.button8.getId():
             selectval=8
-        if controlId==self.button9:
+        if controlId.getId()==self.button9.getId():
             selectval=9
-            
+        plugin.notify(str(selectval))
         if selectval>=0:
             if self.caplist[0]==-1:
                 self.caplist[0]=selectval
-                socket = xl.urlopen('https://captchaapi.115.com/?ct=index&ac=code&t=single&id=%s'%(selectval),cookie='PHPSESSID='+self.sign)
-                pngdata = socket.read()
+                pngdata = xl.urlopen('https://captchaapi.115.com/?ct=index&ac=code&t=single&id=%s'%(selectval),cookie='PHPSESSID='+self.sign,binary = True)
                 cap1filepath=xbmc.translatePath( os.path.join( __temppath__, 'cap1%s.png'%(uuid.uuid4().hex)) )
                 with open(cap1filepath, "wb") as cap1file:
                     cap1file.write(pngdata)
@@ -935,8 +933,7 @@ class CaptchaDlg(xbmcgui.WindowDialog):
                 self.capimg1.setImage(cap1filepath,useCache=False)
             elif self.caplist[1]==-1:
                 self.caplist[1]=selectval
-                socket = xl.urlopen('https://captchaapi.115.com/?ct=index&ac=code&t=single&id=%s'%(selectval),cookie='PHPSESSID='+self.sign)
-                pngdata = socket.read()
+                pngdata = xl.urlopen('https://captchaapi.115.com/?ct=index&ac=code&t=single&id=%s'%(selectval),cookie='PHPSESSID='+self.sign,binary = True)
                 cap2filepath=xbmc.translatePath( os.path.join( __temppath__, 'cap2%s.png'%(uuid.uuid4().hex)) )
                 with open(cap2filepath, "wb") as cap2file:
                     cap2file.write(pngdata)
@@ -944,8 +941,7 @@ class CaptchaDlg(xbmcgui.WindowDialog):
                 self.capimg2.setImage(cap2filepath,useCache=False)
             elif self.caplist[2]==-1:
                 self.caplist[2]=selectval
-                socket = xl.urlopen('https://captchaapi.115.com/?ct=index&ac=code&t=single&id=%s'%(selectval),cookie='PHPSESSID='+self.sign)
-                pngdata = socket.read()
+                pngdata = xl.urlopen('https://captchaapi.115.com/?ct=index&ac=code&t=single&id=%s'%(selectval),cookie='PHPSESSID='+self.sign,binary = True)
                 cap3filepath=xbmc.translatePath( os.path.join( __temppath__, 'cap3%s.png'%(uuid.uuid4().hex)) )
                 with open(cap3filepath, "wb") as cap3file:
                     cap3file.write(pngdata)
@@ -953,8 +949,7 @@ class CaptchaDlg(xbmcgui.WindowDialog):
                 self.capimg3.setImage(cap3filepath,useCache=False)
             elif self.caplist[3]==-1:
                 self.caplist[3]=selectval
-                socket = xl.urlopen('https://captchaapi.115.com/?ct=index&ac=code&t=single&id=%s'%(selectval),cookie='PHPSESSID='+self.sign)
-                pngdata = socket.read()
+                pngdata = xl.urlopen('https://captchaapi.115.com/?ct=index&ac=code&t=single&id=%s'%(selectval),cookie='PHPSESSID='+self.sign,binary = True)
                 cap4filepath=xbmc.translatePath( os.path.join( __temppath__, 'cap4%s.png'%(uuid.uuid4().hex)) )
                 with open(cap4filepath, "wb") as cap4file:
                     cap4file.write(pngdata)
@@ -1131,7 +1126,9 @@ def searchinit(stypes,sstr,modify,otherargs):
                 comm.searchvalues['strlist'].append(newsstr)
                 return stypesearch(liststypes,newsstr,dictotherargs)
             else:
-                xbmc.executebuiltin('Container.update('+plugin.url_for('searchinit',stypes=stypes,sstr=six.ensure_binary(newsstr),modify='0',otherargs=otherargs)+')')
+                updataurl=plugin.url_for('searchinit',stypes=stypes,sstr=six.ensure_binary(newsstr),modify='0',otherargs=otherargs)
+                #plugin.notify(updataurl)
+                xbmc.executebuiltin('Container.update(%s)'%updataurl)
             return
         if modify=='4':
             newsstr=selectstr(sstr)
@@ -1817,17 +1814,17 @@ def play(pc,name,iso):
         if subpath[subpath.rfind('.'):]=='.idx_sub':
             subpath=subpath[:subpath.rfind('.')]
             [urlidx,urlsub]=suburl.split(' ')
-            subdata = xl.urlopen(urlidx,byts=True)
+            subdata = xl.urlopen(urlidx,binary=True)
             with open(six.ensure_binary(subpath+'.idx'), "wb") as subFile:
                 subFile.write(subdata)
             subFile.close()
-            subdata = xl.urlopen(urlsub,byts=True)
+            subdata = xl.urlopen(urlsub,binary=True)
             with open(six.ensure_binary(subpath+'.sub'), "wb") as subFile:
                 subFile.write(subdata)
             subFile.close()
             subpath=subpath+'.idx'
         else:
-            subdata = xl.urlopen(suburl,byts=True)
+            subdata = xl.urlopen(suburl,binary=True)
             with open(six.ensure_binary(subpath), "wb") as subFile:
                 subFile.write(subdata)
             subFile.close()
@@ -1917,17 +1914,17 @@ def ffmpeg(pc,name):
         if subpath[subpath.rfind('.'):]=='.idx_sub':
             subpath=subpath[:subpath.rfind('.')]
             [urlidx,urlsub]=suburl.split(' ')
-            subdata = xl.urlopen(urlidx,byts=True)
+            subdata = xl.urlopen(urlidx,binary=True)
             with open(six.ensure_binary(subpath+'.idx'), "wb") as subFile:
                 subFile.write(subdata)
             subFile.close()
-            subdata = xl.urlopen(urlsub,byts=True)
+            subdata = xl.urlopen(urlsub,binary=True)
             with open(six.ensure_binary(subpath+'.sub'), "wb") as subFile:
                 subFile.write(subdata)
             subFile.close()
             subpath=subpath+'.idx'
         else:
-            subdata = xl.urlopen(suburl,byts=True)
+            subdata = xl.urlopen(suburl,binary=True)
             with open(six.ensure_binary(subpath), "wb") as subFile:
                 subFile.write(subdata)
             subFile.close()
