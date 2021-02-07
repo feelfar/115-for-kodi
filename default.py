@@ -1,10 +1,7 @@
 # -*- coding: utf-8 -*-
 # default.py
 from  __future__  import unicode_literals
-
 import sys
-
-
 
 import os,json,xbmc,xbmcgui,xbmcvfs,gzip,re,time,threading,socket,uuid,base64
 try:
@@ -23,7 +20,6 @@ from Cryptodome.PublicKey import RSA
 
 import comm
 plugin = comm.plugin
-setthumbnail=comm.setthumbnail
 __cwd__=comm.__cwd__
 colorize_label=comm.colorize_label
 __resource__ =comm.__resource__
@@ -36,13 +32,12 @@ from six.moves.urllib import parse
 from six.moves.urllib import request
 from six.moves import http_cookiejar as cookielib
 
-from commfunc import keyboard,_http,encode_obj
+from commfunc import keyboard,_http,encode_obj,notify
 
 videoexts=plugin.get_setting('videoext').lower().split(',')
 musicexts=plugin.get_setting('musicext').lower().split(',')
 
 cookiefile = xbmc.translatePath(os.path.join(__cwd__, 'cookie.dat'))
-subcache = plugin.get_storage('subcache')
 ids = plugin.get_storage('ids')
 renameext = plugin.get_storage('renameext')
 cursorttype= plugin.get_storage('cursorttype')
@@ -656,18 +651,18 @@ wlHF+mkTJpKd5Wacef0vV+xumqNorvLpIXWKwxNaoHM=
         if not result:
             tm = str(int(int(time.time())))
             pcencode = self.m115_encode((json.dumps({'pickcode': pc})).replace(' ',''),tm)
-            #plugin.notify(parse.urlencode(encode_obj({'data':pcencode['data']})))
+            #notify(parse.urlencode(encode_obj({'data':pcencode['data']})))
             data = self.urlopen('http://proapi.115.com/app/chrome/downurl?t='+tm,data=parse.urlencode(encode_obj({'data':pcencode['data']})))
             jsondata = json.loads(data[data.index('{'):])
             if jsondata['state'] != True:
                 if 'msg' in jsondata:
-                    plugin.notify('获取文件下载链接出错'+jsondata['msg'])
+                    notify('获取文件下载链接出错'+jsondata['msg'])
                     return ''
                 if 'error' in jsondata:
-                    plugin.notify('获取文件下载链接出错'+jsondata['error'])
+                    notify('获取文件下载链接出错'+jsondata['error'])
                     return ''
                 else:
-                    plugin.notify('获取文件下载链接出错')
+                    notify('获取文件下载链接出错')
                     return ''
             decodetmp=self.m115_decode(jsondata['data'], pcencode['key'])
             bdecode = bytearray()
@@ -921,7 +916,6 @@ class CaptchaDlg(xbmcgui.WindowDialog):
             selectval=8
         if controlId.getId()==self.button9.getId():
             selectval=9
-        plugin.notify(str(selectval))
         if selectval>=0:
             if self.caplist[0]==-1:
                 self.caplist[0]=selectval
@@ -960,7 +954,7 @@ class CaptchaDlg(xbmcgui.WindowDialog):
                 data = xl.urlopen('https://webapi.115.com/user/captcha',data='code=%s&sign=%s&ac=security_code&type=web'%(code,self.sign))
                 data=xl.jsonload(data)
                 if data['state']:
-                    plugin.notify('验证通过')
+                    notify('验证通过')
                     for f in os.listdir(__temppath__):
                         if re.search(r'^cap.*',f):
                             os.remove( os.path.join( __temppath__, f))
@@ -976,9 +970,9 @@ def login():
         msg='登录成功!当前用户：'+r['user_name']
         if r['is_vip']!=1:
             msg=msg+' 您还不是VIP用户，某些功能可能无法使用，请谅解。'
-        plugin.notify(msg=msg)
+        notify(msg=msg)
     else:
-        plugin.notify('登录失败：' + r['message'])
+        notify('登录失败：' + r['message'])
     return
 
 @plugin.route('/setting')
@@ -1009,7 +1003,7 @@ def index():
     if str(plugin.get_setting('javbus'))=='true':
         items.insert(7, {'label': 'javbus', 'path': plugin.url_for('javbus'),'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'javbus.png') )})
     sortasc=str(plugin.get_setting('sortasc'))
-    setthumbnail['set']=True
+    comm.setthumbnail=True
     return items
 
 @plugin.route('/btsearchother')
@@ -1051,8 +1045,9 @@ def stypesearch(liststypes,sstr,dictotherargs):
             return javbus.javlist(qbbb=qbbb,filtertype='search',filterkey=sstr,page=1)
 
 def selectstr(sstr):
-    strlist=re.split(r'[\s\x2E\x5B\x5D\x28\x29\x3C\x3E\x5F]+', sstr)
-    #plugin.notify(strlist)
+    #strlist=re.split(r'[\s\x2E\x5B\x5D\x28\x29\x3C\x3E\x5F]+', sstr)
+    strlist=re.split(r'[\s\u0021-\u002F\u003A-\u0040\uFF01-\uFF0F\uFF1A-\uFF20]+', sstr)
+    #notify(strlist)
     strsel=''
     dialog = xbmcgui.Dialog()
     sel=999
@@ -1109,37 +1104,42 @@ def searchinit(stypes,sstr,modify,otherargs):
     dictotherargs=json.loads(otherargs)
     if not isinstance(dictotherargs,dict):
         dictotherargs={}
+    #notify(str(modify)+ sstr)
     if sstr and sstr!='0' and modify=='0':
         comm.searchvalues['strlist']= [e for e in comm.searchvalues['strlist'] if six.ensure_binary(e)!=six.ensure_binary(sstr)]
         comm.searchvalues['strlist'].append(sstr)
+        comm.searchvalues.sync()
         return stypesearch(liststypes,sstr,dictotherargs)
     else:
         if modify=='1':
             if sstr=='0': sstr=''
             newsstr = keyboard(text=sstr).strip()
             if not newsstr:
+                comm.searchvalues.sync()
                 return
             comm.searchvalues['strlist']= [e for e in comm.searchvalues['strlist'] if e!=sstr]
             comm.searchvalues['strlist']= [e for e in comm.searchvalues['strlist'] if e!=newsstr]
             #comm.searchvalues['strlist'].append(newsstr)
             if not sstr:
                 comm.searchvalues['strlist'].append(newsstr)
+                comm.searchvalues.sync()
                 return stypesearch(liststypes,newsstr,dictotherargs)
             else:
                 updataurl=plugin.url_for('searchinit',stypes=stypes,sstr=six.ensure_binary(newsstr),modify='0',otherargs=otherargs)
-                #plugin.notify(updataurl)
                 xbmc.executebuiltin('Container.update(%s)'%updataurl)
-            return
+                #return RunPlugin(updataurl)
         if modify=='4':
             newsstr=selectstr(sstr)
             if not newsstr:
+                comm.searchvalues.sync()
                 return
             comm.searchvalues['strlist']= [e for e in comm.searchvalues['strlist'] if e!=newsstr]
-            xbmc.executebuiltin('Container.update('+plugin.url_for('searchinit',stypes=stypes,sstr=six.ensure_binary(newsstr),modify='0',otherargs=otherargs)+')')
+            updataurl=plugin.url_for('searchinit',stypes=stypes,sstr=six.ensure_binary(newsstr),modify='0',otherargs=otherargs)
+            xbmc.executebuiltin('Container.update(%s)'%updataurl)
         if modify=='2':
             comm.searchvalues['strlist']= [e for e in comm.searchvalues['strlist'] if e!=sstr]
             xbmc.executebuiltin('Container.Refresh()')
-            return
+            #return
         if modify=='3':
             dialog = xbmcgui.Dialog()
             ret = dialog.yesno('清空搜索关键字', '是否删除所有搜索关键字')
@@ -1159,6 +1159,8 @@ def searchinit(stypes,sstr,modify,otherargs):
             items.append(listitem)
         if len(comm.searchvalues['strlist'])>0:
             items.append({'label': colorize_label('清空搜索关键字', color='FF0000'), 'path': plugin.url_for('searchinit',stypes=stypes,sstr='0',modify='3',otherargs=otherargs)})
+        comm.searchvalues.sync()
+        comm.setthumbnail=False
         return items
 
 @plugin.route('/pansearch/<cid>/<mstr>/<offset>')
@@ -1194,11 +1196,10 @@ def pansearch(cid,mstr,offset):
         plugin.set_content('movies')
         
         if imagecount >= 10 and imagecount * 2 > len(items):
-            setthumbnail['set']=True
-            
+            comm.setthumbnail=True
         return items
     else:
-        plugin.notify(msg='数据获取失败,错误信息:'+six.ensure_text(data['error']))
+        notify(msg='数据获取失败,错误信息:'+six.ensure_text(data['error']))
         login()
         return
         
@@ -1254,23 +1255,24 @@ def getListItem(item,pathname=''):
         else:
             listitem=None
             
-        if is_subtitle(item['ico']):
+        if is_subtitle(item['ico']):            
             if item['ico'].lower()=='idx' or item['ico'].lower()=='sub':
                 subname=(item['n'][:item['n'].rfind('.')]+'.idx_sub')
                 if subname in subcache.raw_dict():
-                    subcache[subname][item['ico'].lower()]=item['pc']
+                    comm.subcache[subname][item['ico'].lower()]=item['pc']
                 else:
-                    subcache[subname]={}
-                    subcache[subname][item['ico'].lower()]=item['pc']
+                    comm.subcache[subname]={}
+                    comm.subcache[subname][item['ico'].lower()]=item['pc']
             else:
-                subcache[item['n']]=item['pc']
+                comm.subcache[item['n']]=item['pc']
+            comm.subcache.sync()
         
         if 'u' in item and  listitem!=None:
             listitem.set_thumbnail(item['u'])
             
         if 'cid' in item:
             locateurl=plugin.url_for('getfilelist',cid=item['cid'],offset=0,star='0',typefilter=0,searchstr='0',changesort='0')
-            context_menu_items.append((colorize_label('定位到所在目录','menu'), 'Container.update('+locateurl+')',))
+            context_menu_items.append((colorize_label('定位到所在目录','menu'), 'Container.update(%s)'%locateurl,))
         if str(plugin.get_setting('panedit'))=='true':
             if listitem!=None and 'cid' in item and 'fid' in item:
                 warringmsg='是否删除文件:'+item['n']
@@ -1281,7 +1283,7 @@ def getListItem(item,pathname=''):
         
         if 'pid' in item:
             locateurl=plugin.url_for('getfilelist',cid=item['pid'],offset=0,star='0',typefilter=0,searchstr='0',changesort='0')
-            context_menu_items.append((colorize_label('定位到所在目录','menu'), 'Container.update('+locateurl+')',))
+            context_menu_items.append((colorize_label('定位到所在目录','menu'), 'Container.update(%s)'%locateurl,))
             
         if str(plugin.get_setting('panedit'))=='true':
             if 'cid' in item and 'pid' in item:
@@ -1333,14 +1335,14 @@ def deletefile(pid,fid,warringmsg):
             data=xl.urlopen('http://web.api.115.com/rb/delete',data=data)
             data= data.replace('\n','').replace('\r','')
             data=json.loads(data[data.index('{'):])
-            #plugin.notify(data,delay=50000)
+            #notify(data,delay=50000)
             if data['state']:
                 xbmc.executebuiltin('Container.Refresh()')
             else:
-                plugin.notify(msg='删除失败,错误信息:'+six.ensure_text(data['error']))
+                notify(msg='删除失败,错误信息:'+six.ensure_text(data['error']))
                 return
         except:
-            plugin.notify(msg='删除失败')
+            notify(msg='删除失败')
             return
 
 @plugin.route('/mark/<fid>/<mark>')
@@ -1353,10 +1355,10 @@ def mark(fid,mark):
         if data['state']:
             xbmc.executebuiltin('Container.Refresh()')
         else:
-            plugin.notify(msg='星标失败,错误信息:'+six.ensure_text(data['error']))
+            notify(msg='星标失败,错误信息:'+six.ensure_text(data['error']))
             return
     except:
-            plugin.notify(msg='星标失败')
+            notify(msg='星标失败')
             return
 
 
@@ -1371,7 +1373,7 @@ def rename(fid,filename):
     if result:
         xbmc.executebuiltin('Container.Refresh()')
     else:
-        plugin.notify(msg='重命名失败')
+        notify(msg='重命名失败')
         
 @plugin.route('/settag/<fid>/<fllist>')
 def settag(fid,fllist):
@@ -1398,7 +1400,7 @@ def settag(fid,fllist):
     if result:
         xbmc.executebuiltin('Container.Refresh()')
     else:
-        plugin.notify(msg='重命名失败')
+        notify(msg='重命名失败')
 
 def getdirinfo(cid):
     pageitems = {'0': 25,'1': 50,'2': 100}
@@ -1441,10 +1443,10 @@ def createdir(pid,cname):
         if data['state']:
             return data['cid']
         else:
-            plugin.notify(msg='新建文件夹失败,错误信息:'+six.ensure_text(data['error']))
+            notify(msg='新建文件夹失败,错误信息:'+six.ensure_text(data['error']))
             return pid
     except:
-            plugin.notify(msg='新建文件夹失败')
+            notify(msg='新建文件夹失败')
             return pid
 
 def getdir(cid,title):
@@ -1496,10 +1498,10 @@ def move(fid,filename):
             if data['state']:
                 xbmc.executebuiltin('Container.Refresh()')
             else:
-                plugin.notify(msg='移动失败,错误信息:'+six.ensure_text(data['error']))
+                notify(msg='移动失败,错误信息:'+six.ensure_text(data['error']))
                 return
         except:
-                plugin.notify(msg='移动失败')
+                notify(msg='移动失败')
                 return
         ids['movepid']=pid
 
@@ -1512,14 +1514,14 @@ def getfilelistdata(cid,offset,star,typefilter='0',searchstr='0',nf='0'):
     sortasc='0'
     if cursorttype['s']=='1' or cursorttype['s']=='2' or cursorttype['s']=='4':
         sortasc='1'
-    #plugin.notify('%s  %s'%(sorttype,sortasc))
+    #notify('%s  %s'%(sorttype,sortasc))
     pageitems = {'0': '25','1': '50','2': '100'}
     pageitem=pageitems[plugin.get_setting('pageitem')]
     return xl.getfilelist(cid,offset,pageitem,star,sorttype,sortasc,typefilter,nf=nf,search_value=searchstr)
     
 @plugin.route('/getfilelist/<cid>/<offset>/<star>/<typefilter>/<searchstr>/<changesort>')
 def getfilelist(cid,offset,star,typefilter='0',searchstr='0',changesort='0'):
-    subcache.clear()
+    comm.subcache.clear()
     sorttypelist=['从新到旧','从旧到新','从小到大','从大到小','从A到Z','从Z到A']
     if changesort=='1':
         dialog = xbmcgui.Dialog()
@@ -1571,7 +1573,7 @@ def getfilelist(cid,offset,star,typefilter='0',searchstr='0',changesort='0'):
         if str(plugin.get_setting('genm3u8'))=='true':
             items.append({'label': '生成M3U8文件', 'path': plugin.url_for('m3u8',cid=cid,offset=offset,star=star,typefilter=typefilter,searchstr=searchstr,name=milkname)})
         
-        #plugin.notify('{"cid":"%s"}'%(cid))
+        #notify('{"cid":"%s"}'%(cid))
         if searchstr=='' or searchstr=='0':
             items.append({'label': '搜索当前目录【%s】'%colorize_label(itemname, 'dir'),
                         'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'disksearch.png') ), 
@@ -1609,10 +1611,11 @@ def getfilelist(cid,offset,star,typefilter='0',searchstr='0',changesort='0'):
                 'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'nextpage.png') )})
         plugin.set_content('movies')
         if imagecount >= 10 and imagecount * 2 > len(items):
-            setthumbnail['set']=True
+            comm.setthumbnail=True
+        #notify(str(comm.subcache.raw_dict()))
         return items
     else:
-        plugin.notify(msg='数据获取失败,错误信息:'+six.ensure_text(data['error']))
+        notify(msg='数据获取失败,错误信息:'+six.ensure_text(data['error']))
         login()
         return
 
@@ -1713,18 +1716,18 @@ def getvideourl(pc,fid,stm,name=''):
         if changeserver=='-1':
             return '-1'
         #if changeserver!='':
-        #    plugin.notify('CDN服务器:'+changeserver)
+        #    notify('CDN服务器:'+changeserver)
         playmode=str(plugin.get_setting('playmode'))
         videourl=xl.getfiledownloadurl(pc,changeserver=changeserver,withcookie=True)
         match = re.search("//(?P<CDN>.*115\x2ecom)/", videourl, re.IGNORECASE | re.DOTALL)
         if match:
             #pass
-            plugin.notify('CDN服务器:'+ match.group("CDN"))
+            notify('CDN服务器:'+ match.group("CDN"))
         if playmode=='0' and videourl:
             #preurl=pre_file_play(fid)
             #result=_http(preurl)
             videourl=get_file_download_url(pc,fid,isvideo=True,changeserver=changeserver,name=parse.quote_plus(name))
-            #plugin.notify('Name:'+ name)
+            #notify('Name:'+ name)
             #videourl=get_file_download_url(pc,fid,isvideo=True,changeserver='cdamz.115.com',name=name)
         #videourl=videourl+'|User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.181 Safari/537.36'
     else:
@@ -1760,7 +1763,7 @@ def play(pc,name,iso):
     if int(stm)>0:
         videourl=getvideourl(pc,data['file_id'],stm,name)
     if videourl=='':
-        plugin.notify(msg='无视频文件.')
+        notify(msg='无视频文件.')
         return
     if videourl=='-1':
         return
@@ -1772,11 +1775,12 @@ def play(pc,name,iso):
                 sub_pcs[('_builtin_'+s['title'])]=s['url']
     subpath=''
     name=six.ensure_text(name)
-    #plugin.notify(msg=str(type(name)))
+    #notify(msg=str(type(name)))
     name=name[:name.rfind('.')].lower()
-    for k,v in subcache.items():
+    #notify(msg=str(comm.subcache.raw_dict()))
+    for k,v in comm.subcache.items():
         if k.lower().find(name)!= -1:
-            #plugin.notify(k)
+            #notify(k)
             #sub_pcs['_same_'+k]=get_file_download_url(v,'')
             if k[k.rfind('.'):]=='.idx_sub':
                 if 'idx' in v and 'sub' in v:
@@ -1801,7 +1805,7 @@ def play(pc,name,iso):
     if len(sub_pcs)==1:
         subpath = os.path.join( __subpath__,list(sub_pcs.keys())[0])
         suburl=sub_pcs[list(sub_pcs.keys())[0]]
-        plugin.notify('加载了1个字幕')
+        notify('加载了1个字幕')
         
     elif len(sub_pcs)>1:
         dialog = xbmcgui.Dialog()
@@ -1852,7 +1856,7 @@ def ffmpeg(pc,name):
     if int(stm)>0:
         videourl=getvideourl(pc,data['file_id'],stm,name)
     if videourl=='':
-        plugin.notify(msg='无视频文件.')
+        notify(msg='无视频文件.')
         return
     if videourl=='-1':
         return
@@ -1869,9 +1873,9 @@ def ffmpeg(pc,name):
             for s in data['subtitle_info']:
                 sub_pcs[('_builtin_'+s['title'])]=s['url']
     
-    for k,v in subcache.items():
+    for k,v in comm.subcache.items():
         if k.lower().find(name)!= -1:
-            #plugin.notify(k)
+            #notify(k)
             #sub_pcs['_same_'+k]=get_file_download_url(v,'')
             if k[k.rfind('.'):]=='.idx_sub':
                 if 'idx' in v and 'sub' in v:
@@ -1901,7 +1905,7 @@ def ffmpeg(pc,name):
     if len(sub_pcs)==1:
         subpath = os.path.join( ffmpegdowloadpath,list(sub_pcs.keys())[0])
         suburl=sub_pcs[list(sub_pcs.keys())[0]]
-        plugin.notify('发现1个字幕')
+        notify('发现1个字幕')
         
     elif len(sub_pcs)>1:
         dialog = xbmcgui.Dialog()
@@ -1935,8 +1939,8 @@ def ffmpeg(pc,name):
         batFile.write(ffmpegdl(videourl,outputfname,subpath,stm).encode('utf-8'))
         
     batFile.close()
-    plugin.notify('已在/Download/115/ffmpegdowload/目录下生成bat文件')
-    #plugin.notify(batfname)
+    notify('已在/Download/115/ffmpegdowload/目录下生成bat文件')
+    #notify(batfname)
     
 @plugin.route('/offline_bt/<sha1>')
 def offline_bt(sha1):
@@ -1964,14 +1968,14 @@ def offline_bt(sha1):
             data=xl.urlopen('http://115.com/web/lixian/?ct=lixian&ac=add_task_bt',data=data)
             data=json.loads(data[data.index('{'):])
             if data['state']:
-                plugin.notify('离线任务添加成功！', delay=2000)
+                notify('离线任务添加成功！', delay=2000)
             else:
-                plugin.notify(data['error_msg'], delay=2000)
+                notify(data['error_msg'], delay=2000)
                 if data['errcode']==911:
                     captcha()
                 return
         else:
-            plugin.notify(data['error_msg'], delay=2000)
+            notify(data['error_msg'], delay=2000)
             return
     else:
         return
@@ -1997,7 +2001,7 @@ def delete_offline_list(hashinfo,warringmsg):
         if data['state']:
             xbmc.executebuiltin('Container.Refresh()')
         else:
-            plugin.notify(msg='删除失败,错误信息:'+six.ensure_text(data['error']))
+            notify(msg='删除失败,错误信息:'+six.ensure_text(data['error']))
             return
 
 @plugin.route('/offline_list')
@@ -2047,7 +2051,7 @@ def shellopen(pc,fname):
     url=getvideourl(pc,data['file_id'],'99',fname)
     
     if url=='':
-        plugin.notify(msg='无视频文件.')
+        notify(msg='无视频文件.')
         return
     if url=='-1':
         return
@@ -2082,7 +2086,7 @@ def m3u8(cid,offset,star,typefilter='0',searchstr='0',name='0'):
     htmlFile.close()
     genm3u8(cid,offset,star,typefilter,searchstr,savepath,stm,name)
     
-    plugin.notify(msg='在/Download/115/目录下生成'+str(milkvrcount)+'个M3U8文件！')
+    notify(msg='在/Download/115/目录下生成'+str(milkvrcount)+'个M3U8文件！')
     
 def ffmpegdl(input,output,subtitle='',stm='-1'):
     #ffmpegopt='-err_detect ignore_err -filter:v pad=11/10*iw:ih:(ow-iw)/2:0,stereo3d=sbsl:abl,crop=10/11*iw:ih:(iw-ow)/2:0,stereo3d=abl:sbsl -y -bsf:a aac_adtstoasc'
@@ -2172,7 +2176,7 @@ def genm3u8(cid,offset,star,typefilter,searchstr,savepath,stm,name):
                     url=getvideourl(item['pc'],item['fid'],stm)
                     if url!='':
                         m3u8fname=xbmc.translatePath(os.path.join(savepath, fname+'.m3u8'))
-                        #plugin.notify(m3u8fname)
+                        #notify(m3u8fname)
                         with open(m3u8fname, "wb") as m3u8File:
                             
                             m3u8File.write('#EXTM3U\r\n#EXT-X-STREAM-INF:PROGRAM-ID=1,NAME="%s"\r\n'%(fname))
@@ -2227,10 +2231,10 @@ def offline(url):
     data=xl.offline(url)
     #plugin.log.error(data)
     if data['state']:
-        plugin.notify(' 添加离线成功',delay=1000)
+        notify(' 添加离线成功',delay=1000)
     else:
         if data['errcode']==911:
-            plugin.notify(data['error_msg'],delay=2000)
+            notify(data['error_msg'],delay=2000)
             captcha()
         else:
             magnet = ''
@@ -2238,13 +2242,13 @@ def offline(url):
             if match:
                 magnet = match.group('magnet')
             if magnet:
-                plugin.notify('磁力离线失败,已尝试下载种子文件，请一段时间后查看',delay=1000)
+                notify('磁力离线失败,已尝试下载种子文件，请一段时间后查看',delay=1000)
                 #torrenturl='https://btdb.eu/tfiles/%s.torrent'%(magnet)
                 #offline(torrenturl)
                 torrenturl='http://itorrents.org/torrent/%s.torrent'%(magnet)
                 offline(torrenturl)
             else:
-                plugin.notify(' 添加离线失败,错误代码:'+data['error_msg'],delay=1000)
+                notify(' 添加离线失败,错误代码:'+data['error_msg'],delay=1000)
         
     xbmc.executebuiltin( "Dialog.Close(busydialog)" )
     if data['state']:
@@ -2261,12 +2265,18 @@ def execmagnet(url,title='',msg=''):
         
 if __name__ == '__main__':
     # Override default handler
+    #comm.setthumbnail=False
     plugin.run()
     skindir=xbmc.getSkinDir()
-    if setthumbnail['set']:
+    
+    if comm.setthumbnail:
         if skindir in comm.ALL_VIEW_CODES['thumbnail']:
             thumbmode=comm.ALL_VIEW_CODES['thumbnail'][skindir]
-            #plugin.notify(str(thumbmode))
-            #plugin.set_view_mode(comm.ALL_VIEW_CODES['thumbnail'][skindir])
+            notify(str(thumbmode))
             xbmc.executebuiltin('Container.SetViewMode(%d)' % thumbmode)
+    else:
+        if skindir in comm.ALL_VIEW_CODES['list']:
+            listmode=comm.ALL_VIEW_CODES['list'][skindir]
+            notify(str(listmode))
+            xbmc.executebuiltin('Container.SetViewMode(%d)' % listmode)
 

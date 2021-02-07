@@ -5,6 +5,7 @@ from  __future__  import unicode_literals
 import sys
 
 import xbmc,xbmcvfs,json,gzip,time,os
+
 try:
     xbmc.translatePath = xbmcvfs.translatePath
 except AttributeError:
@@ -28,14 +29,15 @@ import six
 from six.moves.urllib import parse
 from six.moves.urllib import request
 from six.moves import http_cookiejar as cookielib
+from commfunc import get_storage
 
 from xbmcswift2 import Plugin
 plugin = Plugin()
-setthumbnail=plugin.get_storage('setthumbnail')
-setthumbnail['set']=False
+setthumbnail=False
 
-moviepoint=plugin.get_storage('moviepoint')
-searchvalues=plugin.get_storage('searchvalues')
+moviepoint={}
+subcache=get_storage('subcache')
+searchvalues=get_storage('searchvalues')
 
 colors = {'dir': 'FF9966','video': 'FF0033','bt': '33FF00', 'audio': '66CCCC', 'subtitle':'505050', 'image': '99CC33',
         'back': '0099CC','next':'CCCCFF', 'menu':'CCFF66', 'star1':'FFFF00','star0':'777777','sort':'666699','filter':'0099CC',
@@ -44,7 +46,7 @@ colors = {'dir': 'FF9966','video': 'FF0033','bt': '33FF00', 'audio': '66CCCC', '
 ALL_VIEW_CODES = {
     'list': {
         'skin.confluence': 50, # List
-        'skin.estuary': 50, # List
+        'skin.estuary': 55, # List
         'skin.aeon.nox': 50, # List
         'skin.droid': 50, # List
         'skin.quartz': 50, # List

@@ -11,7 +11,7 @@ import comm,six
 from xbmcswift2 import ListItem
 plugin = comm.plugin
 IMAGES_PATH = comm.IMAGES_PATH
-from commfunc import keyboard,_http,encode_obj
+from commfunc import keyboard,_http,encode_obj,notify
 
 import nova2
 
@@ -94,10 +94,10 @@ def btsearch(enginestr,sstr,sorttype):
             if sorttype==-1:
                 return None
             sorttype=supportsort[int(sorttype)]
-            #plugin.notify(sorttype)
+            #notify(sorttype)
     result=nova2.search(enginestr,sstr,sorttype,maxresult=max)
     msg='共找到%d条磁力链' % (len(result))
-    plugin.notify(msg)
+    notify(msg)
 
     for res_dict in result:
         title='[COLOR FF00FFFF]'+res_dict['size']+'[/COLOR]'+'[COLOR FFCCFFCC]'+res_dict['date'][:10]+'[/COLOR]'+res_dict['name']

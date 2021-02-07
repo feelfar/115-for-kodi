@@ -10,13 +10,12 @@ import comm,six
 from six.moves.urllib import parse
 from traceback import format_exc
 plugin = comm.plugin
-setthumbnail=comm.setthumbnail
 __cwd__=comm.__cwd__
 __resource__ =comm.__resource__
 IMAGES_PATH = comm.IMAGES_PATH
 __subpath__  = comm.__subpath__
 __temppath__  = comm.__temppath__
-from commfunc import keyboard,_http,url_is_alive,encode_obj
+from commfunc import keyboard,_http,url_is_alive,encode_obj,notify
 colorize_label=comm.colorize_label
 from xbmcswift2 import ListItem
 
@@ -33,7 +32,7 @@ def javbus():
     if not 'base' in javbusurl.raw_dict():
         getjavbusurl()
     
-    #plugin.notify(javbusurl['qb'])
+    #notify(javbusurl['qb'])
     item = [
         {'label': '骑兵片片列表', 'path': plugin.url_for('javlist', qbbb='qb',filtertype='0',filterkey='0',page=1)},
         {'label': '骑兵优优列表', 'path': plugin.url_for('javstarlist', qbbb='qb',page=1)},
@@ -84,7 +83,7 @@ def getjavbusurl():
 
         
     except:
-        plugin.notify('JAVBUS网址查询失败')
+        notify('JAVBUS网址查询失败')
         #return	
         urls.append('https://www.javbus.com')
         urls.append('https://www.javbus.info')
@@ -106,11 +105,11 @@ def getjavbusurl():
         match = re.search(r'visible-sm-block.*?href="([0-9a-zA-Z\x2E\x2F\x3A]*?)/">歐美', rspbase, re.DOTALL | re.MULTILINE)
         if match:
             javbusurl['om'] = match.group(1)
-            plugin.notify('JAVBUS网址更新成功！')
+            notify('JAVBUS网址更新成功！')
         '''
     except:
         xbmc.log(msg=format_exc(),level=xbmc.LOGERROR)
-        plugin.notify('JAVBUS网址更新失败')
+        notify('JAVBUS网址更新失败')
         javbusurl['om']=plugin.get_setting('javbusom').lower()
     
 
@@ -146,7 +145,7 @@ def javmagnet(qbbb='qb',gid='0',uc='0'):
         menus.append(listitem)
     return menus
 #except:
-    plugin.notify('自带磁力获取失败')
+    notify('自带磁力获取失败')
     return
 
 @plugin.route('/javdetail/<qbbb>/<movieno>/<id>/<title>')
@@ -160,7 +159,7 @@ def javdetail(qbbb='qb',movieno='0',id='0',title='0'):
         match = re.search("var\x20gid\x20*=\x20*(?P<gid>.*?);.*?var\x20uc\x20=\x20(?P<uc>.*?);", rsp, re.DOTALL | re.MULTILINE)
     except:
         xbmc.log(msg=format_exc(),level=xbmc.LOGERROR)
-        plugin.notify('片片信息获取失败')
+        notify('片片信息获取失败')
         xbmc.log(msg=format_exc(),level=xbmc.LOGERROR)
         return
     if match:
@@ -226,7 +225,7 @@ def javdetail(qbbb='qb',movieno='0',id='0',title='0'):
         comm.moviepoint['group']='javbus'
         comm.moviepoint['title']=title
         comm.moviepoint['thumbnail']=match.group('mainimg')
-    #plugin.notify(movieid+'，'+movieid2)		  
+    #notify(movieid+'，'+movieid2)		  
     releech='</span>\x20<a\x20href="%s/(?P<filter_type>[a-z]+?)/(?P<filter_key>[0-9a-z]+?)">(?P<filter_name>.*?)</a>'%(javbusurl[qbbb])
     leech = re.compile(releech, re.S)
     for match in leech.finditer(rsp):
@@ -304,7 +303,7 @@ def javdetail(qbbb='qb',movieno='0',id='0',title='0'):
         menus.append({'label':'样品图',
               'path': plugin.url_for('showpic', imageurl=match.group('sampleimg')),
               'thumbnail':match.group('thumbimg'),})
-    #plugin.notify(movieid2)		  
+    #notify(movieid2)		  
     if movieid=='' and qbbb=='qb' and movieid2!='':
         cururl='https://javzoo.com'
         tellmeurl='https://tellme.pw/avmoo'
@@ -346,7 +345,7 @@ def javdetail(qbbb='qb',movieno='0',id='0',title='0'):
               'info_type':'video',
               'info':{'title':six.ensure_text(title)}
               })
-    setthumbnail['set']=True
+    comm.setthumbnail=True
     return menus
 
 
@@ -389,7 +388,7 @@ def freepv(movieid=''):
             match = re.search(r'[\x22\x27]\x2Fproduct\x2F(?P<no>[^\s]+?)\x2F[\x22\x27]', videodata, re.DOTALL | re.MULTILINE)
             if match:
                 movid2 = match.group('no')
-                #plugin.notify(movid2)
+                #notify(movid2)
                 videodata=_http('http://www.tokyo-hot.com/product/%s/'%(movid2))
                 
                 match2 = re.search(r'mp4[\x22\x27]\s+src\s*=\s*[\x22\x27](?P<src>.*?mp4)[\x22\x27]', videodata, re.DOTALL | re.MULTILINE)
@@ -418,7 +417,7 @@ def freepv(movieid=''):
     if videourl!='':
         plugin.set_resolved_url(videourl)
     else:
-        plugin.notify('未找到预告片')
+        notify('未找到预告片')
     return
 
 @plugin.route('/chg_existmag/<qbbb>/<filtertype>/<filterkey>')
@@ -504,11 +503,11 @@ def javlist(qbbb='qb',filtertype='0',filterkey='0',page=1):
             menus.append({'label': '下一页',
                         'path':plugin.url_for('javlist', qbbb=qbbb,filtertype=filtertype,filterkey=filterkey,page=int(page)+1),
                         'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'nextpage.png') )})
-        setthumbnail['set']=True
+        comm.setthumbnail=True
         plugin.set_content('movies')
         return menus
     except Exception as ex:
-        plugin.notify('片片列表获取失败'+str(ex))
+        notify('片片列表获取失败'+str(ex))
         xbmc.log(msg=format_exc(),level=xbmc.LOGERROR)
         return
 
@@ -543,10 +542,10 @@ def javstarlist(qbbb='qb',page=1):
             menus.append({'label': '下一页',
                         'path':plugin.url_for('javstarlist', qbbb=qbbb,page=int(page)+1),
                         'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'nextpage.png') )})
-        setthumbnail['set']=True
+        comm.setthumbnail=True
         return menus
     except:
-        plugin.notify('女优列表获取失败')
+        notify('女优列表获取失败')
         xbmc.log(msg=format_exc(),level=xbmc.LOGERROR)
         return
     
@@ -583,6 +582,6 @@ def javgernefilter(qbbb='qb'):
                   })
         return menus
     except:
-        plugin.notify('类型列表获取失败')
+        notify('类型列表获取失败')
         xbmc.log(msg=format_exc(),level=xbmc.LOGERROR)
         return

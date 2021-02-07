@@ -11,13 +11,12 @@ import comm,six
 from six.moves import html_parser
 from six.moves.urllib import parse
 plugin = comm.plugin
-setthumbnail=comm.setthumbnail
 __cwd__=comm.__cwd__
 __resource__ =comm.__resource__
 IMAGES_PATH = comm.IMAGES_PATH
 __subpath__  = comm.__subpath__
 __temppath__  = comm.__temppath__
-from commfunc import keyboard,_http,encode_obj
+from commfunc import keyboard,_http,encode_obj,notify
 colorize_label=comm.colorize_label
 from xbmcswift2 import ListItem
 
@@ -28,7 +27,6 @@ def dbplaytrailer(movid):
     videourl=''
     try:
         url='https://movie.douban.com/trailer/'+movid+'/#content'
-        #xbmc.log(url)
         rsp= _http(url)
         match = re.search(r'video\s+id.*?source\s+src\x3D[\x27\x22](?P<videourl>.*?)[\x27\x22]', rsp, re.DOTALL | re.MULTILINE)
         if match:
@@ -59,7 +57,7 @@ def dbtrailer():
             
             })
         i+=1
-    setthumbnail['set']=True
+    comm.setthumbnail=True
     return menus
 '''
 
@@ -79,8 +77,7 @@ def dbclips(subject):
                 'info':{'title':movtitle}
                 })
     plugin.set_content('movies')
-    setthumbnail['set']=True
-    
+    comm.setthumbnail=True
     return menus
 
 @plugin.route('/dbphotos/<subject>/<pictype>/<page>')
@@ -92,7 +89,6 @@ def dbphotos(subject,pictype='S',page=0):
         menus.append({'label':comm.colorize_label(pictypes[key],None,color='32FF94') ,
                     'path':  plugin.url_for('dbphotos', subject=subject,pictype=key,page=0),
                     'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'picture.png') )})
-        
     url='https://movie.douban.com/subject/%s/photos?type=%s&start=%d'%(subject,pictype,int(page)*30)
     #plugin.log.error(url)
     rsp = _http(url,referer='https://www.douban.com/link2/')
@@ -119,8 +115,8 @@ def dbphotos(subject,pictype='S',page=0):
                     'path':  plugin.url_for('dbphotos', subject=subject,pictype=pictype,page=int(page)+1)})
     
     plugin.set_content('images')
-    setthumbnail['set']=True
-    #plugin.notify('dbphotos:'+subject)
+    comm.setthumbnail=True
+    #notify('dbphotos:'+subject)
     return menus
     
     
@@ -128,28 +124,12 @@ def dbphotos(subject,pictype='S',page=0):
 def dbsummary(summary):
     dialog = xbmcgui.Dialog()
     dialog.textviewer('简介', summary)
-'''
-@plugin.route('/dbsubject/<subject>')
-def dbsubject(subject):
-    menus=[]
-        try:
-        rsp = _http('https://movie.douban.com/subject/'+subject+'/',referer='https://www.douban.com/link2/')
-        for match in re.finditer('[\x22\x27]\x2Ftag\x2F(?P<tag>.*?)[\x22\x27]', rsp, re.DOTALL | re.IGNORECASE):
-            menus.append({'label': '标签:[COLOR FF00AAFF]%s[/COLOR]' % (match.group('tag')),
-                    'path':  plugin.url_for('dbmovie',tags=match.group('tag'),sort='0',page='0',addtag='0'),
-                    'thumbnail':thumb})
-        
-        return menus
-    except Exception as e:
-        plugin.notify(str(e))
-        return
-'''
+
 @plugin.route('/dbsubject/<subject>')
 def dbsubject(subject):
     menus=[]
     try:
         rsp = _http('https://movie.douban.com/subject/'+subject+'/',referer='https://www.douban.com/link2/')
-
         #plugin.log.error(rsp)
         year=title=title2=thumb=summary=''
         
@@ -157,7 +137,6 @@ def dbsubject(subject):
         if m:
             title = m.group("title")
             title=title[0:title.index('(')].strip()
-            
         rtxt = r'dale_movie_subject_top_icon.*?itemreviewed\x22\x3E(?P<title>.*?)\x3C.*?\x22year\x22\x3E(?P<year>.*?)\x3C.*?mainpic.*?img\s+src\x3D\x22(?P<thumb>.*?)\x22'
         m = re.search(rtxt, rsp, re.DOTALL)
         
@@ -248,7 +227,11 @@ def dbsubject(subject):
                 listitem.add_context_menu_items(context_menu_items)
                 menus.append(listitem)
             '''
-            menus.append(ListItem(label='搜索:[COLOR FF00FFFF]%s[/COLOR]' % (six.ensure_text(sstr)),
+            sstr = six.ensure_text(sstr).replace('第一季','s01').replace('第二季','s02').replace('第三季','s03').replace('第四季','s04').replace('第五季','s05')\
+                .replace('第六季','s06').replace('第七季','s07').replace('第八季','s08').replace('第九季','s09').replace('第十季','s10')\
+                .replace('第十一季','s11').replace('第十二季','s12').replace('第十三季','s13').replace('第十四季','s14').replace('第十五季','s15')\
+                .replace('第十六季','s16').replace('第十七季','s17').replace('第十八季','s18').replace('第十九季','s19').replace('第二十季','s20')
+            menus.append(ListItem(label='搜索:[COLOR FF00FFFF]%s[/COLOR]' % (sstr),
                 label2=None, icon=None,
                 thumbnail=xbmc.translatePath( os.path.join( IMAGES_PATH, 'disksearch.png') ),
                 path=plugin.url_for('searchinit',stypes='pan,bt',sstr=six.ensure_binary(sstr),modify='1',otherargs='{}')))
@@ -275,13 +258,6 @@ def dbsubject(subject):
         for tag in tags:
             menus.append({'label': '标签:[COLOR FF00AAFF]%s[/COLOR]' % (tag),'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'tag.png') ),
                     'path':  plugin.url_for('dbmovie',tags=six.ensure_binary(tag),sort='U',page='0',addtag='0',scorerange='0',year_range='0')})
-        '''
-        rsp = _http('https://movie.douban.com/subject/'+subject+'/',referer='https://www.douban.com/link2/')
-        for match in re.finditer('[\x22\x27]\x2Ftag\x2F(?P<tag>.*?)[\x22\x27]', rsp, re.DOTALL | re.IGNORECASE):
-            menus.append({'label': '标签:[COLOR FF00AAFF]%s[/COLOR]' % (match.group('tag')),
-                    'path':  plugin.url_for('dbmovie',tags=match.group('tag'),sort='U',page='0',addtag='0',scorerange='0',year_range='0'),
-                    'thumbnail':thumb})
-        '''
         return menus
     except Exception as e:
         xbmc.log(msg=format_exc(),level=xbmc.LOGERROR)
@@ -394,15 +370,18 @@ def dbmovie(tags='',sort='U',page=0,addtag=0,scorerange='',year_range=''):
     
     #url='https://movie.douban.com/j/search_subjects?type=movie&tag=%s&sort=%s&page_limit=20&page_start=%s'%(tags.replace(' ','%20'),sort,str(page))
     url='https://movie.douban.com/j/new_search_subjects?'+parse.urlencode(encode_obj({'tags':tags,'sort':sort,'range':scorerange,'genres':'','start':str(int(page)*20),'year_range':year_range}))
-   
     try:
         rsp = _http(url)
         minfo = json.loads(rsp[rsp.index('{'):])
         menus =[]
         for m in minfo['data']:
             context_menu_items=[]
-            context_menu_items.append(('搜索'+colorize_label(m['title'], color='00FF00'), 
-                'RunPlugin('+plugin.url_for('searchinit',stypes='pan,bt,db',sstr=six.ensure_binary(m['title']),modify='1',otherargs='{}')+')',))
+            searchtitle = m['title'].replace('第一季','s01').replace('第二季','s02').replace('第三季','s03').replace('第四季','s04').replace('第五季','s05')\
+                .replace('第六季','s06').replace('第七季','s07').replace('第八季','s08').replace('第九季','s09').replace('第十季','s10')\
+                .replace('第十一季','s11').replace('第十二季','s12').replace('第十三季','s13').replace('第十四季','s14').replace('第十五季','s15')\
+                .replace('第十六季','s16').replace('第十七季','s17').replace('第十八季','s18').replace('第十九季','s19').replace('第二十季','s20')
+            context_menu_items.append(('搜索'+colorize_label(searchtitle, color='00FF00'), 
+                'RunPlugin('+plugin.url_for('searchinit',stypes='pan,bt,db',sstr=six.ensure_binary(searchtitle),modify='1',otherargs='{}')+')',))
                 
             listitem=ListItem(label='%s[[COLOR FFFF3333]%s[/COLOR]]'%(m['title'],m['rate']),
                     thumbnail= m['cover'], 
@@ -413,7 +392,7 @@ def dbmovie(tags='',sort='U',page=0,addtag=0,scorerange='',year_range=''):
                 menus.append(listitem)
             
         if len(menus)<=1: 
-            plugin.notify('豆瓣标签:无记录')
+            notify('豆瓣标签:无记录')
             return
         tags2='0'
         if tags:
@@ -432,11 +411,11 @@ def dbmovie(tags='',sort='U',page=0,addtag=0,scorerange='',year_range=''):
         menus.insert(0, {'label': '排序:[COLOR FFFF3333]%s[/COLOR]'%(sorttype),
             'path': plugin.url_for('dbmovie',tags=six.ensure_binary(tags2),sort='set',page='0',addtag='0',scorerange=scorerange,year_range=year_range)})
         plugin.set_content('movies')
-        setthumbnail['set']=True
+        comm.setthumbnail=True
         return menus
     except Exception as e:
         xbmc.log(msg=format_exc(),level=xbmc.LOGERROR)
-        plugin.notify(str(e))
+        notify(str(e))
         return
 
 
@@ -471,8 +450,8 @@ def dbsearch(sstr, page=0):
         if not sstr or sstr=='0':
             return
     try:
-        sstr=re.sub(r'\s+','',sstr)
-        url = 'https://www.douban.com/j/search?q=%s&start=%s&cat=1002' % (sstr, str(int(page)*20))
+        sstr = re.sub(r'\s+','',sstr)
+        url = 'https://www.douban.com/j/search?'+parse.urlencode(encode_obj({'q':sstr,'start':int(page)*20,'cat':1002}))
         rsp = _http(url)
         minfo = json.loads(rsp[rsp.index('{'):])
         menus =[]
@@ -486,11 +465,14 @@ def dbsearch(sstr, page=0):
                     ratm = re.search(r'rating_nums">(.*?)</span>', m.group(4), re.DOTALL | re.IGNORECASE)
                     if ratm:
                         rat = ratm.group(1)
-
-                    menus.append({'label': '%s[%s]'%(m.group(3),rat),
+                    searchtitle = m.group(3).replace('第一季','s01').replace('第二季','s02').replace('第三季','s03').replace('第四季','s04').replace('第五季','s05')\
+                        .replace('第六季','s06').replace('第七季','s07').replace('第八季','s08').replace('第九季','s09').replace('第十季','s10')\
+                        .replace('第十一季','s11').replace('第十二季','s12').replace('第十三季','s13').replace('第十四季','s14').replace('第十五季','s15')\
+                        .replace('第十六季','s16').replace('第十七季','s17').replace('第十八季','s18').replace('第十九季','s19').replace('第二十季','s20')
+                    menus.append({'label': '%s[[COLOR FFFF3333]%s[/COLOR]]'%(m.group(3),rat),
                         'path': plugin.url_for('dbsubject', subject=m.group(1)),
                         'thumbnail': m.group(2),
-                        'context_menu':[('搜索'+colorize_label(m.group(3), color='00FF00'), 
+                        'context_menu':[('搜索'+colorize_label(searchtitle, color='00FF00'), 
                             'RunPlugin('+plugin.url_for('searchinit',stypes='pan,bt',sstr=six.ensure_binary(m.group(2)),modify='1',otherargs='{}')+')',)],
                         })
                 else:
@@ -507,7 +489,7 @@ def dbsearch(sstr, page=0):
                 'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'nextpage.png') ),
                 })
     #except: pass
-    setthumbnail['set']=True
+    comm.setthumbnail=True
     return menus
 
 @plugin.route('/celephotos/<cele>/<page>')
@@ -538,7 +520,7 @@ def celephotos(cele,page=0):
             menus.append({'label':'下一页','thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'nextpage.png') ),
                     'path':  plugin.url_for('celephotos', cele=cele,page=int(page)+1)})
     plugin.set_content('images')
-    setthumbnail['set']=True
+    comm.setthumbnail=True
     return menus
     
 url = 'https://movie.douban.com/celebrity/1274761/photos/'
@@ -609,12 +591,12 @@ def dbactor(sstr,sort='time',page=0):
                 menus.append({'label':'下一页','thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'nextpage.png') ),
                         'path':  plugin.url_for('dbactor',sstr=six.ensure_binary(sstr),sort=sort,page=int(page)+1)})
         plugin.set_content('images')
-        setthumbnail['set']=True
+        comm.setthumbnail=True
         return menus
         return menus
         
     except Exception as e:
-        plugin.notify(str(e))
+        notify(str(e))
         xbmc.log(msg=format_exc(),level=xbmc.LOGERROR)
         return
     
@@ -638,7 +620,7 @@ def dbntop():
     try:
         rsp = _http('http://movie.douban.com/chart')
         menus=rspmenus(rsp)
-        setthumbnail['set']=True
+        comm.setthumbnail=True
         plugin.set_content('movies')
         return menus
     except:
@@ -654,16 +636,21 @@ def dbtop(page):
         mstr = r'class="item".*?href="(.*?)".*?alt="(.*?)" src="(.*?)".*?<p class="">\s+(.*?)</p>'
         mpatt = re.compile(mstr, re.S)
         mitems = mpatt.findall(rsp)
-        
-        menus = [{'label': '{0}. {1}[{2}]'.format(s+pc+1, i[1], ''.join(
-            i[3].replace('&nbsp;', ' ').replace('<br>', ' ').replace(
-                '\n', ' ').split(' '))),
-                  'path': plugin.url_for('dbsubject', subject=i[0][i[0].find('subject')+7:].replace('/','')),
-                  'thumbnail': i[2],
-                  'context_menu':[('搜索'+colorize_label(i[1], color='00FF00'), 
-                    'RunPlugin('+plugin.url_for('searchinit',stypes='pan,bt',sstr=six.ensure_binary(i[1]),modify='1',otherargs='{}')+')',)],
-                  #'thumbnail': i[2].replace('ipst','lpst').replace('img3.douban.com','img4.douban.com'),
-             } for s, i in enumerate(mitems)]
+        menus = []
+        for s, i in enumerate(mitems):
+            searchtitle = i[1].replace('第一季','s01').replace('第二季','s02').replace('第三季','s03').replace('第四季','s04').replace('第五季','s05')\
+                .replace('第六季','s06').replace('第七季','s07').replace('第八季','s08').replace('第九季','s09').replace('第十季','s10')\
+                .replace('第十一季','s11').replace('第十二季','s12').replace('第十三季','s13').replace('第十四季','s14').replace('第十五季','s15')\
+                .replace('第十六季','s16').replace('第十七季','s17').replace('第十八季','s18').replace('第十九季','s19').replace('第二十季','s20')
+            menus.append({'label': '{0}. {1}[{2}]'.format(s+pc+1, i[1], ''.join(
+                i[3].replace('&nbsp;', ' ').replace('<br>', ' ').replace(
+                    '\n', ' ').split(' '))),
+                      'path': plugin.url_for('dbsubject', subject=i[0][i[0].find('subject')+7:].replace('/','')),
+                      'thumbnail': i[2],
+                      'context_menu':[('搜索'+colorize_label(searchtitle, color='00FF00'), 
+                        'RunPlugin('+plugin.url_for('searchinit',stypes='pan,bt',sstr=six.ensure_binary(i[1]),modify='1',otherargs='{}')+')',)],
+                      #'thumbnail': i[2].replace('ipst','lpst').replace('img3.douban.com','img4.douban.com'),
+                 })
         
         if page <9 :
             menus.append({'label': '下一页',
@@ -671,7 +658,7 @@ def dbtop(page):
                           'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'nextpage.png') )})
         
         plugin.set_content('movies')
-        setthumbnail['set']=True
+        comm.setthumbnail=True
         return menus
     except:
         xbmc.log(msg=format_exc(),level=xbmc.LOGERROR)
@@ -684,13 +671,13 @@ def dbtypetop(dbtype='1',start=0):
     try:
         rsp = _http(url)
         
-        #plugin.notify('a')
+        #notify('a')
         minfo = json.loads(rsp[rsp.index('['):])
         
         menus =[]
         plugin.log.error(minfo)
         for m in minfo:
-            #plugin.notify(m)
+            #notify(m)
             menus.append({'label': '%s[%s]'%(m['title'],m['score']),
                 'path': plugin.url_for('dbsubject', subject=m['id']),
                 'thumbnail': m['cover_url'],
@@ -705,7 +692,7 @@ def dbtypetop(dbtype='1',start=0):
                 'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'nextpage.png') )})
         
         plugin.set_content('movies')
-        setthumbnail['set']=True
+        comm.setthumbnail=True
         return menus
     except:
         xbmc.log(msg=format_exc(),level=xbmc.LOGERROR)
