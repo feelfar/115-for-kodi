@@ -4,12 +4,12 @@ from  __future__  import unicode_literals
 
 import sys
 
+import xbmc,xbmcgui,xbmcaddon,xbmcvfs,json,gzip,os,csv,time,shutil,collections
+
 try:
     xbmc.translatePath = xbmcvfs.translatePath
 except AttributeError:
     pass
-import xbmc,xbmcgui,xbmcaddon,json,gzip,os,csv,time,shutil,collections
-
 from traceback import format_exc
 
 try:
