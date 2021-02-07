@@ -4,7 +4,7 @@ from  __future__  import unicode_literals
 
 import sys
 
-import xbmc,xbmcgui,xbmcaddon,xbmcvfs,json,gzip,os,csv,time,shutil,collections
+import xbmc,xbmcgui,xbmcaddon,xbmcvfs,xbmcplugin,json,gzip,os,csv,time,shutil,collections
 
 try:
     xbmc.translatePath = xbmcvfs.translatePath
@@ -130,6 +130,44 @@ def notify(msg='', title=None, delay=5000, image=''):
         title = xbmcaddon.Addon().getAddonInfo('name')
     xbmcgui.Dialog().notification(heading=title, message=msg, time=delay, icon=image)
     
+
+def get_setting(key, converter=None, choices=None):
+    '''Returns the settings value for the provided key.
+    If converter is str, unicode, bool or int the settings value will be
+    returned converted to the provided type.
+    If choices is an instance of list or tuple its item at position of the
+    settings value be returned.
+    .. note:: It is suggested to always use unicode for text-settings
+              because else xbmc returns utf-8 encoded strings.
+
+    :param key: The id of the setting defined in settings.xml.
+    :param converter: (Optional) Choices are str, unicode, bool and int.
+    :param converter: (Optional) Choices are instances of list or tuple.
+
+    Examples:
+        * ``get_setting('per_page', int)``
+        * ``get_setting('password', unicode)``
+        * ``get_setting('force_viewmode', bool)``
+        * ``get_setting('content', choices=('videos', 'movies'))``
+    '''
+    #TODO: allow pickling of settings items?
+    # TODO: STUB THIS OUT ON CLI
+    value = xbmcaddon.Addon().getSetting(id=key)
+
+    if converter is str:
+        return value
+    elif converter is bool:
+        return value == 'true'
+    elif converter is int:
+        return int(value)
+    elif isinstance(choices, (list, tuple)):
+        return choices[int(value)]
+    elif converter is None:
+        return value
+    else:
+        raise TypeError('Acceptable converters are str, unicode, bool and '
+                        'int. Acceptable choices are instances of list '
+                        ' or tuple.')
 
 class _PersistentDictMixin(object):
     ''' Persistent dictionary with an API compatible with shelve and anydbm.
@@ -345,3 +383,245 @@ def get_storage(name='main', file_format='pickle', TTL=None):
 
     xbmc.log(msg = 'Loaded storage "%s" from disk'%name,level=xbmc.LOGDEBUG)
     return storage
+
+
+class ListItem(object):
+    '''A wrapper for the xbmcgui.ListItem class. The class keeps track
+    of any set properties that xbmcgui doesn't expose getters for.
+    '''
+    def __init__(self, label=None, label2=None, icon=None, thumbnail=None,
+                 path=None, fanart=None):
+        '''Defaults are an emtpy string since xbmcgui.ListItem will not
+        accept None.
+        '''
+        kwargs = {
+            'label': label,
+            'label2': label2,
+            'path': path
+        }
+        #kwargs = dict((key, val) for key, val in locals().items() if val is
+        #not None and key != 'self')
+        kwargs = dict((key, val) for key, val in kwargs.items()
+                      if val is not None)
+        self._listitem = xbmcgui.ListItem(**kwargs)
+
+        # kodi doesn't make getters available for these properties so we'll
+        # keep track on our own
+        self._path = path
+        self._context_menu_items = []
+        self.is_folder = True
+        self._played = False
+        self._art = {'icon': icon, 'thumb': thumbnail, 'fanart': fanart}
+
+        # set listitem art
+        self._listitem.setArt(self._art)
+
+    def __repr__(self):
+        return ("<ListItem '%s'>" % self.label).encode('utf-8')
+
+    def __str__(self):
+        return ('%s (%s)' % (self.label, self.path)).encode('utf-8')
+
+    def get_context_menu_items(self):
+        '''Returns the list of currently set context_menu items.'''
+        return self._context_menu_items
+
+    def add_context_menu_items(self, items):
+        '''Adds context menu items. replace_items is only kept for
+        legacy reasons, its functionality was removed.
+        '''
+        for label, action in items:
+            assert isinstance(label, basestring)
+            assert isinstance(action, basestring)
+
+        self._context_menu_items.extend(items)
+        self._listitem.addContextMenuItems(items)
+
+    def get_label(self):
+        '''Sets the listitem's label'''
+        return self._listitem.getLabel()
+
+    def set_label(self, label):
+        '''Returns the listitem's label'''
+        return self._listitem.setLabel(label)
+
+    label = property(get_label, set_label)
+
+    def get_label2(self):
+        '''Returns the listitem's label2'''
+        return self._listitem.getLabel2()
+
+    def set_label2(self, label):
+        '''Sets the listitem's label2'''
+        return self._listitem.setLabel2(label)
+
+    label2 = property(get_label2, set_label2)
+
+    def is_selected(self):
+        '''Returns True if the listitem is selected.'''
+        return self._listitem.isSelected()
+
+    def select(self, selected_status=True):
+        '''Sets the listitems selected status to the provided value.
+        Defaults to True.
+        '''
+        return self._listitem.select(selected_status)
+
+    selected = property(is_selected, select)
+
+    def set_info(self, type, info_labels):
+        '''Sets the listitems info'''
+        return self._listitem.setInfo(type, info_labels)
+
+    def get_property(self, key):
+        '''Returns the property associated with the given key'''
+        return self._listitem.getProperty(key)
+
+    def set_property(self, key, value):
+        '''Sets a property for the given key and value'''
+        return self._listitem.setProperty(key, value)
+
+    def add_stream_info(self, stream_type, stream_values):
+        '''Adds stream details'''
+        return self._listitem.addStreamInfo(stream_type, stream_values)
+
+    def get_icon(self):
+        '''Returns the listitem's icon image'''
+        return self._art['icon']
+
+    def set_icon(self, icon):
+        '''Sets the listitem's icon image'''
+        self._art['icon'] = icon
+        return self._listitem.setArt(self._art)
+
+    icon = property(get_icon, set_icon)
+
+    def get_thumbnail(self):
+        '''Returns the listitem's thumbnail image'''
+        return self._art['thumbnail']
+
+    def set_thumbnail(self, thumbnail):
+        '''Sets the listitem's thumbnail image'''
+        self._art['thumbnail'] = thumbnail
+        return self._listitem.setArt(self._art)
+
+    def set_art(self, art):
+        self._art = art
+        return self._listitem.setArt(self._art)
+
+    thumbnail = property(get_thumbnail, set_thumbnail)
+
+    def get_path(self):
+        '''Returns the listitem's path'''
+        return self._path
+
+    def set_path(self, path):
+        '''Sets the listitem's path'''
+        self._path = path
+        return self._listitem.setPath(path)
+
+    path = property(get_path, set_path)
+
+    def get_is_playable(self):
+        '''Returns True if the listitem is playable, False if it is a
+        directory
+        '''
+        return not self.is_folder
+
+    def set_is_playable(self, is_playable):
+        '''Sets the listitem's playable flag'''
+        value = 'false'
+        if is_playable:
+            value = 'true'
+        self.set_property('isPlayable', value)
+        self.is_folder = not is_playable
+
+    playable = property(get_is_playable, set_is_playable)
+
+    def set_played(self, was_played):
+        '''Sets the played status of the listitem. Used to
+        differentiate between a resolved video versus a playable item.
+        Has no effect on KODI, it is strictly used for xbmcswift2.
+        '''
+        self._played = was_played
+
+    def get_played(self):
+        '''Returns True if the video was played.'''
+        return self._played
+
+    def as_tuple(self):
+        '''Returns a tuple of list item properties:
+            (path, the wrapped xbmcgui.ListItem, is_folder)
+        '''
+        return self.path, self._listitem, self.is_folder
+
+    def as_xbmc_listitem(self):
+        '''Returns the wrapped xbmcgui.ListItem'''
+        return self._listitem
+
+    @classmethod
+    def from_dict(cls, label=None, label2=None, icon=None, thumbnail=None,
+                  path=None, selected=None, info=None, properties=None,
+                  context_menu=None, replace_context_menu=False,
+                  is_playable=None, info_type='video', stream_info=None, fanart=None):
+        '''A ListItem constructor for setting a lot of properties not
+        available in the regular __init__ method. Useful to collect all
+        the properties in a dict and then use the **dct to call this
+        method.
+        '''
+        icon=thumbnail
+        listitem = cls(label, label2, icon, thumbnail, path, fanart)
+
+        if selected is not None:
+            listitem.select(selected)
+
+        if info:
+            listitem.set_info(info_type, info)
+
+        if is_playable:
+            listitem.set_is_playable(True)
+
+        if properties:
+            # Need to support existing tuples, but prefer to have a dict for
+            # properties.
+            if hasattr(properties, 'items'):
+                properties = properties.items()
+            for key, val in properties:
+                listitem.set_property(key, val)
+
+        if stream_info:
+            for stream_type, stream_values in stream_info.items():
+                listitem.add_stream_info(stream_type, stream_values)
+
+        if context_menu:
+            listitem.add_context_menu_items(context_menu)
+
+        return listitem
+
+        
+def _listitemify(item):
+    '''Creates an xbmcswift2.ListItem if the provided value for item is a
+    dict. If item is already a valid xbmcswift2.ListItem, the item is
+    returned unmodified.
+    '''
+    # Create ListItems for anything that is not already an instance of
+    # ListItem
+    if not hasattr(item, 'as_tuple'):
+        item = ListItem.from_dict(**item)
+    return item
+
+def add_items(handle, items):
+    '''Adds ListItems to the KODI interface. Each item in the
+    provided list should either be instances of xbmcswift2.ListItem,
+    or regular dictionaries that will be passed to
+    xbmcswift2.ListItem.from_dict. Returns the list of ListItems.
+
+    :param items: An iterable of items where each item is either a
+                  dictionary with keys/values suitable for passing to
+                  :meth:`xbmcswift2.ListItem.from_dict` or an instance of
+                  :class:`xbmcswift2.ListItem`.
+    '''
+    _items = [_listitemify(item) for item in items]
+    tuples = [item.as_tuple() for item in _items]
+    xbmcplugin.addDirectoryItems(handle, tuples, len(tuples))
+    xbmcplugin.endOfDirectory(handle)

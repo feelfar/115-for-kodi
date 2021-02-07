@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
-# comm.py
+# py
 from  __future__  import unicode_literals
 
 import sys
 
-import xbmc,xbmcvfs,json,gzip,time,os
+import xbmc,xbmcvfs,xbmcgui,json,gzip,time,os
 
 try:
     xbmc.translatePath = xbmcvfs.translatePath
@@ -29,15 +29,15 @@ import six
 from six.moves.urllib import parse
 from six.moves.urllib import request
 from six.moves import http_cookiejar as cookielib
-from commfunc import get_storage
+from commfunc import keyboard,get_storage,get_setting,ListItem,add_items
 
-from xbmcswift2 import Plugin
-plugin = Plugin()
+import routing
+#from xbmcswift2 import Plugin
+plugin = routing.Plugin()
 setthumbnail=False
 
 moviepoint={}
 subcache=get_storage('subcache')
-searchvalues=get_storage('searchvalues')
 
 colors = {'dir': 'FF9966','video': 'FF0033','bt': '33FF00', 'audio': '66CCCC', 'subtitle':'505050', 'image': '99CC33',
         'back': '0099CC','next':'CCCCFF', 'menu':'CCFF66', 'star1':'FFFF00','star0':'777777','sort':'666699','filter':'0099CC',
@@ -111,3 +111,20 @@ def shellopenurl(url,samsung):
         xbmc.executebuiltin('StartAndroidActivity(%s,android.intent.action.VIEW,,%s)'%(androidbrowser,url))
         
 
+def selectstr(sstr):
+    #strlist=re.split(r'[\s\x2E\x5B\x5D\x28\x29\x3C\x3E\x5F]+', sstr)
+    strlist=re.split(r'[\s\u0021-\u002F\u003A-\u0040\uFF01-\uFF0F\uFF1A-\uFF20]+', sstr)
+    #notify(strlist)
+    strsel=''
+    dialog = xbmcgui.Dialog()
+    sel=999
+    while sel>0:
+        sellist=['选择：'+colorize_label(strsel, color='FFFF00')]+strlist
+        sel = dialog.select('选择字符串',sellist)
+        if sel>0:
+            strsel=strsel+' '+strlist[sel-1]
+            strsel=strsel.strip()
+            strlist.pop(sel-1)
+        if sel==-1:
+            strsel=''
+    return strsel

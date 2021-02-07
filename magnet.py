@@ -8,10 +8,9 @@ try:
 except AttributeError:
     pass
 import comm,six
-from xbmcswift2 import ListItem
 plugin = comm.plugin
 IMAGES_PATH = comm.IMAGES_PATH
-from commfunc import keyboard,_http,encode_obj,notify
+from commfunc import keyboard,_http,encode_obj,notify,ListItem
 
 import nova2
 
@@ -26,23 +25,23 @@ def btsearchInit(sstr='',modify='0'):
     
     items=[]
     items.append({'label': '编辑搜索关键字[COLOR FF00FFFF]%s[/COLOR]'%(six.ensure_text(sstr)),
-                'path': plugin.url_for('btsearchInit', sstr=six.ensure_binary(sstr), modify='1')})
+                'path': plugin.url_for(btsearchInit, sstr=six.ensure_binary(sstr), modify='1')})
     items.append({'label': '按[COLOR FFFF00FF]%s[/COLOR]全搜索[COLOR FF00FFFF]%s[/COLOR]'%('相关度',six.ensure_text(sstr)), 
-                'path': plugin.url_for('btsearch',enginestr='all',sstr=six.ensure_binary(sstr),sorttype='relevance')})
+                'path': plugin.url_for(btsearch,enginestr='all',sstr=six.ensure_binary(sstr),sorttype='relevance')})
     items.append({'label': '按[COLOR FFFF00FF]%s[/COLOR]全搜索[COLOR FF00FFFF]%s[/COLOR]'%('创建时间',six.ensure_text(sstr)), 
-                'path': plugin.url_for('btsearch',enginestr='all',sstr=six.ensure_binary(sstr),sorttype='addtime')})
+                'path': plugin.url_for(btsearch,enginestr='all',sstr=six.ensure_binary(sstr),sorttype='addtime')})
     items.append({'label': '按[COLOR FFFF00FF]%s[/COLOR]全搜索[COLOR FF00FFFF]%s[/COLOR]'%('文件大小',six.ensure_text(sstr)), 
-                'path': plugin.url_for('btsearch',enginestr='all',sstr=six.ensure_binary(sstr),sorttype='size')})
+                'path': plugin.url_for(btsearch,enginestr='all',sstr=six.ensure_binary(sstr),sorttype='size')})
     items.append({'label': '按[COLOR FFFF00FF]%s[/COLOR]全搜索[COLOR FF00FFFF]%s[/COLOR]'%('文件数量',six.ensure_text(sstr)), 
-                'path': plugin.url_for('btsearch',enginestr='all',sstr=six.ensure_binary(sstr),sorttype='files')})
+                'path': plugin.url_for(btsearch,enginestr='all',sstr=six.ensure_binary(sstr),sorttype='files')})
     items.append({'label': '按[COLOR FFFF00FF]%s[/COLOR]全搜索[COLOR FF00FFFF]%s[/COLOR]'%('热度',six.ensure_text(sstr)), 
-                'path': plugin.url_for('btsearch',enginestr='all',sstr=six.ensure_binary(sstr),sorttype='popular')})
+                'path': plugin.url_for(btsearch,enginestr='all',sstr=six.ensure_binary(sstr),sorttype='popular')})
     btenginelist=nova2.initialize_engines()
     
     
     for btengine in btenginelist:
         items.append({'label': '在[COLOR FFFFFF00]%s[/COLOR]搜索[COLOR FF00FFFF]%s[/COLOR]'%(btengine,six.ensure_text(sstr)),
-                'path': plugin.url_for('btsearch',enginestr=btengine,sstr=six.ensure_binary(sstr),sorttype='-1'),
+                'path': plugin.url_for(btsearch,enginestr=btengine,sstr=six.ensure_binary(sstr),sorttype='-1'),
                 'thumbnail':xbmc.translatePath(os.path.join( IMAGES_PATH, 'magnet.png')) })
     return items
 
@@ -78,7 +77,7 @@ def anySizeToBytes(size_string):
 def btsearch(enginestr,sstr,sorttype):
     if not sstr or sstr=='0':
         return
-    max=int(plugin.get_setting('btmaxresult'))
+    max=int(get_setting('btmaxresult'))
     max=(max+1)*20
     items=[]
     if enginestr!='all' and sorttype=='-1':
@@ -104,7 +103,7 @@ def btsearch(enginestr,sstr,sorttype):
         filemsg ='大小：'+res_dict['size']+'  创建时间：'+res_dict['date']
         listitem=ListItem(label=comm.colorize_label(title, 'bt'), 
             label2=res_dict['size'], icon=None, thumbnail=None, 
-            path=plugin.url_for('execmagnet',url=res_dict['link'],
+            path=plugin.url_for(execmagnet,url=res_dict['link'],
             title=six.ensure_binary(title),msg=six.ensure_binary(filemsg)))
         #listitem.set_info('picture', {'size': anySizeToBytes(res_dict['size'])})
         context_menu_items=[] 
