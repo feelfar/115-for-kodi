@@ -4,7 +4,11 @@ from  __future__  import unicode_literals
 
 import sys
 
-import xbmc,xbmcgui,xbmcaddon,xbmcvfs,json,gzip,os,csv,time,shutil,collections
+try:
+    xbmc.translatePath = xbmcvfs.translatePath
+except AttributeError:
+    pass
+import xbmc,xbmcgui,xbmcaddon,json,gzip,os,csv,time,shutil,collections
 
 from traceback import format_exc
 
@@ -317,7 +321,7 @@ def get_storage(name='main', file_format='pickle', TTL=None):
                 created. The currently specified TTL is always honored.
     '''
     addon_id=xbmcaddon.Addon().getAddonInfo('id')
-    storage_path = xbmcvfs.translatePath(
+    storage_path = xbmc.translatePath(
         'special://profile/addon_data/%s/.storage/' % addon_id)
     if not os.path.isdir(storage_path):
         os.makedirs(storage_path)
