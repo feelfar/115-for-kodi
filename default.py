@@ -2272,11 +2272,11 @@ if __name__ == '__main__':
     if comm.setthumbnail:
         if skindir in comm.ALL_VIEW_CODES['thumbnail']:
             thumbmode=comm.ALL_VIEW_CODES['thumbnail'][skindir]
-            notify(str(thumbmode))
+            #notify(str(thumbmode))
             xbmc.executebuiltin('Container.SetViewMode(%d)' % thumbmode)
     else:
         if skindir in comm.ALL_VIEW_CODES['list']:
             listmode=comm.ALL_VIEW_CODES['list'][skindir]
-            notify(str(listmode))
+            #notify(str(listmode))
             xbmc.executebuiltin('Container.SetViewMode(%d)' % listmode)
 
