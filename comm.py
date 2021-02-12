@@ -4,7 +4,7 @@ from  __future__  import unicode_literals
 
 import sys
 
-import xbmc,xbmcvfs,xbmcgui,json,gzip,time,os
+import xbmc,xbmcvfs,xbmcgui,xbmcaddon,json,gzip,time,os
 
 try:
     xbmc.translatePath = xbmcvfs.translatePath
@@ -12,6 +12,7 @@ except AttributeError:
     pass
 from traceback import format_exc
 
+_addon = xbmcaddon.Addon()
 __cwd__ = os.path.dirname(__file__)
 __lib__ = xbmc.translatePath( os.path.join( __cwd__, 'lib' ) )
 sys.path.append (__lib__)
@@ -85,6 +86,7 @@ def colorize_label(label, _class=None, color=None):
 
 @plugin.route('/showpic/<imageurl>')
 def showpic(imageurl):
+    imageurl=parse.unquote_plus(imageurl)
     xbmc.executebuiltin("ShowPicture(%s)" % (imageurl))
     return
 
@@ -110,21 +112,3 @@ def shellopenurl(url,samsung):
         # ___ Open media with standard android web browser
         xbmc.executebuiltin('StartAndroidActivity(%s,android.intent.action.VIEW,,%s)'%(androidbrowser,url))
         
-
-def selectstr(sstr):
-    #strlist=re.split(r'[\s\x2E\x5B\x5D\x28\x29\x3C\x3E\x5F]+', sstr)
-    strlist=re.split(r'[\s\u0021-\u002F\u003A-\u0040\uFF01-\uFF0F\uFF1A-\uFF20]+', sstr)
-    #notify(strlist)
-    strsel=''
-    dialog = xbmcgui.Dialog()
-    sel=999
-    while sel>0:
-        sellist=['选择：'+colorize_label(strsel, color='FFFF00')]+strlist
-        sel = dialog.select('选择字符串',sellist)
-        if sel>0:
-            strsel=strsel+' '+strlist[sel-1]
-            strsel=strsel.strip()
-            strlist.pop(sel-1)
-        if sel==-1:
-            strsel=''
-    return strsel

@@ -5,8 +5,9 @@ version="0.2.6.0"
 provider-name="yxblog, 2020-12 modify by feelfar">
 
 <requires>
-	<import addon="script.module.xbmcswift2" version="2.4.0" optional="false"/>
+<!-- 	<import addon="script.module.xbmcswift2" version="2.4.0" optional="false"/> -->
 	<import addon="script.module.pycryptodome" version="3.4.3" optional="false"/>
+<!-- 	<import addon="script.module.routing" version="0.2.0"/> -->
 </requires>
 <extension point="xbmc.python.pluginsource" library="default.py">
 	<provides>image audio video</provides>

@@ -610,6 +610,66 @@ def _listitemify(item):
         item = ListItem.from_dict(**item)
     return item
 
+def _add_subtitles(subtitles):
+    '''Adds subtitles to playing video.
+
+    :param subtitles: A URL to a remote subtitles file or a local filename
+                      for a subtitles file.
+
+    .. warning:: You must start playing a video before calling this method
+                 or it will loop for an indefinite length.
+    '''
+    # This method is named with an underscore to suggest that callers pass
+    # the subtitles argument to set_resolved_url instead of calling this
+    # method directly. This is to ensure a video is played before calling
+    # this method.
+    player = xbmc.Player()
+    monitor = xbmc.Monitor()
+    for _ in range(30) and not monitor.abortRequested():
+        if player.isPlaying():
+            break
+        monitor.waitForAbort(1)
+    else:
+        raise Exception('No video playing. Aborted after 30 seconds.')
+
+    player.setSubtitles(subtitles)
+
+def set_resolved_url(item=None, subtitles=None):
+    '''Takes a url or a listitem to be played. Used in conjunction with a
+    playable list item with a path that calls back into your addon.
+
+    :param item: A playable list item or url. Pass None to alert KODI of a
+                 failure to resolve the item.
+
+                 .. warning:: When using set_resolved_url you should ensure
+                              the initial playable item (which calls back
+                              into your addon) doesn't have a trailing
+                              slash in the URL. Otherwise it won't work
+                              reliably with KODI's PlayMedia().
+    :param subtitles: A URL to a remote subtitles file or a local filename
+                      for a subtitles file to be played along with the
+                      item.
+    '''
+    succeeded = True
+    if item is None:
+        # None item indicates the resolve url failed.
+        item = {}
+        succeeded = False
+
+    # caller is passing a url instead of an item dict
+    if isinstance(item, bytes) or isinstance(item, str):
+        item = {'path': item}
+
+    item = _listitemify(item)
+    item.set_played(True)
+    xbmcplugin.setResolvedUrl(int(sys.argv[1]), succeeded,
+                              item.as_xbmc_listitem())
+
+    # call to _add_subtitles must be after setResolvedUrl
+    if subtitles:
+        _add_subtitles(subtitles)
+    return [item]
+    
 def add_items(handle, items):
     '''Adds ListItems to the KODI interface. Each item in the
     provided list should either be instances of xbmcswift2.ListItem,

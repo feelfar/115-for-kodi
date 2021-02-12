@@ -51,8 +51,7 @@ import six
 # The keys in the dict must be: link,name,size,seeds,leech,engine_url
 # As a convention, try to list results by decrasing number of seeds or similar
 ################################################################################
-from xbmcswift2 import Plugin
-plugin = Plugin()
+
 def initialize_engines():
     """ Import available engines
 
@@ -121,7 +120,6 @@ class workerSearch(threading.Thread):
                 self.thread_stop=True
                 break
             result=task['engine'].search(task['what'],sorttype=task['sort'],page=str(task['page']))
-            #plugin.notify(task['page'])
             if result['state']:
                 if len(result['list'])>0:
                     i=1
@@ -167,7 +165,6 @@ def search(searchengine,what,sort,maxresult=20):
             continue
         if searchengine!=engi and searchengine!='all':
             continue
-        #plugin.notify(searchengine)
         try:
             #import engines.[engine]
             engine_module = __import__(".".join(("engines", engi)))

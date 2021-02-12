@@ -31,7 +31,7 @@ from six.moves.urllib import parse
 from six.moves.urllib import request
 from six.moves import http_cookiejar as cookielib
 
-from commfunc import keyboard,_http,encode_obj,notify,get_setting,get_storage,ListItem,add_items
+from commfunc import keyboard,_http,encode_obj,notify,get_setting,get_storage,ListItem,add_items,set_resolved_url
 
 videoexts=get_setting('videoext').lower().split(',')
 musicexts=get_setting('musicext').lower().split(',')
@@ -924,7 +924,7 @@ def login():
 
 @plugin.route('/setting')
 def setting():
-    ret= open_settings()
+    ret = comm._addon.openSettings()
     return
 
 @plugin.route('/')
@@ -981,6 +981,24 @@ def pantagsearch(otherargs):
         return getfilelist(cid=cid,offset=0,star='0',typefilter='0',searchstr=tagid,changesort='0')
     return
 
+def selectstr(sstr):
+    #strlist=re.split(r'[\s\x2E\x5B\x5D\x28\x29\x3C\x3E\x5F]+', sstr)
+    strlist=re.split(r'[\s\u0021-\u002F\u003A-\u0040\uFF01-\uFF0F\uFF1A-\uFF20]+', sstr)
+    #notify(strlist)
+    strsel=''
+    dialog = xbmcgui.Dialog()
+    sel=999
+    while sel>0:
+        sellist=['选择：'+colorize_label(strsel, color='FFFF00')]+strlist
+        sel = dialog.select('选择字符串',sellist)
+        if sel>0:
+            strsel=strsel+' '+strlist[sel-1]
+            strsel=strsel.strip()
+            strlist.pop(sel-1)
+        if sel==-1:
+            strsel=''
+    return strsel
+
 def stypesearch(liststypes,sstr,dictotherargs):
     stypedict={'pan':'网盘搜索','bt':'磁力搜索','db':'豆瓣搜索','jav':'JAVBUS搜索'}
     stype=''
@@ -1018,7 +1036,6 @@ def searchinit(stypes,sstr,modify,otherargs):
         searchvalues['strlist']=[]
     sstr=six.ensure_text(sstr)
     sstr=sstr.strip()
-    stypes=parse.unquote_plus(stypes)
     liststypes=stypes.split(',')
     if str(get_setting('javbus'))!='true':
         if 'jav' in liststypes:
@@ -1047,8 +1064,9 @@ def searchinit(stypes,sstr,modify,otherargs):
                 searchvalues.sync()
                 return stypesearch(liststypes,newsstr,dictotherargs)
             else:
-                updataurl=plugin.url_for(searchinit,stypes=parse.quote_plus(stypes),sstr=newsstr,modify='0',otherargs=otherargs)
-                xbmc.executebuiltin('Container.update(%s)'%updataurl)
+                updataurl=plugin.url_for(searchinit,stypes=(stypes),sstr=(newsstr),modify='0',otherargs=otherargs)
+                notify('zzzzz:'+updataurl)
+                xbmc.executebuiltin('RunPlugin(%s)'%updataurl)
                 #return RunPlugin(updataurl)
         if modify=='4':
             newsstr=selectstr(sstr)
@@ -1056,8 +1074,8 @@ def searchinit(stypes,sstr,modify,otherargs):
                 searchvalues.sync()
                 return
             searchvalues['strlist']= [e for e in searchvalues['strlist'] if e!=newsstr]
-            updataurl=plugin.url_for(searchinit,stypes=parse.quote_plus(stypes),sstr=newsstr,modify='0',otherargs=otherargs)
-            xbmc.executebuiltin('Container.update(%s)'%updataurl)
+            updataurl=plugin.url_for(searchinit,stypes=(stypes),sstr=(newsstr),modify='1',otherargs=otherargs)
+            xbmc.executebuiltin('RunPlugin(%s)'%updataurl)
         if modify=='2':
             searchvalues['strlist']= [e for e in searchvalues['strlist'] if e!=sstr]
             xbmc.executebuiltin('Container.Refresh()')
@@ -1068,20 +1086,20 @@ def searchinit(stypes,sstr,modify,otherargs):
             if ret:
                 searchvalues['strlist']=[]
         items=[]
-        items.append({'label': colorize_label('添加搜索关键字', color='00FF00'), 'path': plugin.url_for(searchinit,stypes=parse.quote_plus(stypes),sstr='0',modify='1',otherargs=otherargs)})
+        items.append({'label': colorize_label('添加搜索关键字', color='00FF00'), 'path': plugin.url_for(searchinit,stypes=stypes,sstr='0',modify='1',otherargs=otherargs)})
         for strvalue in searchvalues['strlist'][::-1]:
             context_menu_items=[]
             listitem=ListItem(label=strvalue, label2=None, icon=None, thumbnail=None, 
                     path=plugin.url_for(searchinit,stypes=stypes,sstr=strvalue,modify='0',otherargs=otherargs))
-            modiurl=plugin.url_for(searchinit,stypes=parse.quote_plus(stypes),sstr=strvalue,modify='1',otherargs=otherargs)
+            modiurl=plugin.url_for(searchinit,stypes=(stypes),sstr=(strvalue),modify='1',otherargs=otherargs)
             context_menu_items.append(('编辑关键字'+colorize_label(six.ensure_text(strvalue), color='0000FF'), 'RunPlugin(%s)'%modiurl,))
-            deleurl=plugin.url_for(searchinit,stypes=parse.quote_plus(stypes),sstr=strvalue,modify='2',otherargs=otherargs)
+            deleurl=plugin.url_for(searchinit,stypes=(stypes),sstr=(strvalue),modify='2',otherargs=otherargs)
             context_menu_items.append(('删除关键字'+colorize_label(six.ensure_text(strvalue), color='FF0000'), 'RunPlugin(%s)'%deleurl,))
             if len(context_menu_items)>0:
                 listitem.add_context_menu_items(context_menu_items)
             items.append(listitem)
         if len(searchvalues['strlist'])>0:
-            items.append({'label': colorize_label('清空搜索关键字', color='FF0000'), 'path': plugin.url_for(searchinit,stypes=parse.quote_plus(stypes),sstr='0',modify='3',otherargs=otherargs)})
+            items.append({'label': colorize_label('清空搜索关键字', color='FF0000'), 'path': plugin.url_for(searchinit,stypes=stypes,sstr='0',modify='3',otherargs=otherargs)})
         searchvalues.sync()
         setthumbnail=False
         add_items(plugin.handle,items)
@@ -1131,11 +1149,13 @@ def is_subtitle(ext):
 
 def getListItem(item,pathname=''):
     context_menu_items=[]
+    searchiniturl=plugin.url_for(searchinit,stypes=('pan,bt,db,jav'),sstr=(item['n']),modify='4',otherargs='0')
+    xbmc.log('RunPlugin('+searchiniturl+')',level=xbmc.LOGERROR)
     context_menu_items.append(('搜索'+colorize_label(item['n'], color='00FF00'), 
-        'RunPlugin('+plugin.url_for(searchinit,stypes='pan,bt,db,jav',sstr=item['n'],modify='4',otherargs='0')+')',))
+        'RunPlugin('+searchiniturl+')',))
     if 'sha' in item:
         context_menu_items.append(('用'+colorize_label('浏览器','dir')+'打开代理链接', 
-                'RunPlugin('+plugin.url_for(shellopen,pc=item['pc'],fname=item['n'])+')',))
+                'RunPlugin('+plugin.url_for(shellopen,pc=item['pc'],fname=(item['n']))+')',))
         if 'iv' in item:
             isiso='1'
             if 'vdi' in item:
@@ -1148,7 +1168,7 @@ def getListItem(item,pathname=''):
             #listitem.as_xbmc_listitem().setContentLookup(False)
             listitem.set_is_playable('true')
             context_menu_items.append(('FFMpeg转码下载', 
-                'RunPlugin('+plugin.url_for(ffmpeg,pc=item['pc'],name=item['n'])+')',))
+                'RunPlugin('+plugin.url_for(ffmpeg,pc=item['pc'],name=(item['n']))+')',))
             
         elif 'ms' in item:
             #imgurl=getimgurl(item['pc'])
@@ -1198,7 +1218,7 @@ def getListItem(item,pathname=''):
         if str(get_setting('panedit'))=='true':
             if listitem!=None and 'cid' in item and 'fid' in item:
                 warringmsg='是否删除文件:'+item['n']
-                deleteurl=plugin.url_for(deletefile,pid=item['cid'],fid=item['fid'],warringmsg=six.ensure_binary(warringmsg))
+                deleteurl=plugin.url_for(deletefile,pid=item['cid'],fid=item['fid'],warringmsg=warringmsg)
                 context_menu_items.append((colorize_label('删除',color='FF0044'), 'RunPlugin('+deleteurl+')',))
     else:
         listitem=ListItem(label=colorize_label(item['n'], 'dir'), label2=None, icon=None, thumbnail=None, path=plugin.url_for(getfilelist,cid=item['cid'],offset=0,star='0',typefilter=0,searchstr='0',changesort='0'))
@@ -1211,7 +1231,7 @@ def getListItem(item,pathname=''):
             if 'cid' in item and 'pid' in item:
                 warringmsg='是否删除目录及其下所有文件:'+item['n']
                 #listitem.add_context_menu_items([('删除', 'RunPlugin('+plugin.url_for(deletefile,pid=item['pid'],fid=item['cid'],warringmsg=warringmsg)+')',)])
-                deleteurl=plugin.url_for(deletefile,pid=item['pid'],fid=item['cid'],warringmsg=six.ensure_binary(warringmsg))
+                deleteurl=plugin.url_for(deletefile,pid=item['pid'],fid=item['cid'],warringmsg=warringmsg)
                 context_menu_items.append((colorize_label('删除',color='FF0044'), 'RunPlugin('+deleteurl+')',))
     fl=','
     if 'fid' in item:
@@ -1232,8 +1252,8 @@ def getListItem(item,pathname=''):
         
                 
         if str(get_setting('panedit'))=='true':
-            context_menu_items.append((colorize_label('重命名',color='0044FF'), 'RunPlugin('+plugin.url_for(rename,fid=fid,filename=item['n'])+')',))
-            context_menu_items.append((colorize_label('移动..',color='00FF44'), 'RunPlugin('+plugin.url_for(move,fid=fid,filename=item['n'])+')',))
+            context_menu_items.append((colorize_label('重命名',color='0044FF'), 'RunPlugin('+plugin.url_for(rename,fid=fid,filename=(item['n']))+')',))
+            context_menu_items.append((colorize_label('移动..',color='00FF44'), 'RunPlugin('+plugin.url_for(move,fid=fid,filename=(item['n']))+')',))
         if str(item['m'])=='0':
             #listitem.add_context_menu_items([('星标', 'RunPlugin('+plugin.url_for(mark,fid=fid,mark='1')+')',)])
             context_menu_items.append((colorize_label('星标',color='FFFF00'), 'RunPlugin('+plugin.url_for(mark,fid=fid,mark='1')+')',))
@@ -1652,7 +1672,7 @@ def getvideourl(pc,fid,stm,name=''):
         if playmode=='0' and videourl:
             #preurl=pre_file_play(fid)
             #result=_http(preurl)
-            videourl=get_file_download_url(pc,fid,isvideo=True,changeserver=changeserver,name=parse.quote_plus(name))
+            videourl=get_file_download_url(pc,fid,isvideo=True,changeserver=changeserver,name=(name))
             #notify('Name:'+ name)
             #videourl=get_file_download_url(pc,fid,isvideo=True,changeserver='cdamz.115.com',name=name)
         #videourl=videourl+'|User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.181 Safari/537.36'
@@ -1760,7 +1780,7 @@ def play(pc,name,iso):
             subFile.close()
 
     #plugin.set_resolved_url(videourl,six.ensure_text(subpath))
-    plugin.set_resolved_url(videourl)
+    set_resolved_url(videourl)
     
     if subpath:
         player = xbmc.Player()
@@ -1951,19 +1971,19 @@ def offline_list():
         
         listitem=ListItem(label=item['name']+colorize_label("["+msg_st[str(item['status'])]+"]", str(item['status'])), label2=None, icon=None, thumbnail=None, path=plugin.url_for(getfilelist,cid=item['file_id'],offset='0',star='0',typefilter='0',searchstr='0',changesort='0'))
         _hash = parse.urlencode(encode_obj({'uid':uid,'time':str(int(time.time())),r'hash[0]': item['info_hash']}))
-        listitem.add_context_menu_items([('删除离线任务', 'RunPlugin('+plugin.url_for(delete_offline_list,hashinfo=_hash,warringmsg=six.ensure_binary('是否删除任务'))+')',)])
+        listitem.add_context_menu_items([('删除离线任务', 'RunPlugin('+plugin.url_for(delete_offline_list,hashinfo=_hash,warringmsg='是否删除任务')+')',)])
         
         items.append(listitem)
     if j>0:
         _hash = parse.urlencode(clearfaile)
         items.insert(0, {
             'label': colorize_label('清空失败任务','-1'),
-            'path': plugin.url_for(delete_offline_list,hashinfo=_hash,warringmsg=six.ensure_binary('是否清空'+str(j)+'个失败任务'))})
+            'path': plugin.url_for(delete_offline_list,hashinfo=_hash,warringmsg='是否清空'+str(j)+'个失败任务')})
     if i>0:
         _hash = parse.urlencode(clearcomplete)
         items.insert(0, {
             'label': colorize_label('清空完成任务','2'),
-            'path': plugin.url_for(delete_offline_list,hashinfo=_hash,warringmsg=six.ensure_binary('是否清空'+str(i)+'个完成任务'))})
+            'path': plugin.url_for(delete_offline_list,hashinfo=_hash,warringmsg='是否清空'+str(i)+'个完成任务')})
     return items
 
 @plugin.route('/shellopen/<pc>/<fname>')
@@ -2093,7 +2113,7 @@ def genm3u8(cid,offset,star,typefilter,searchstr,savepath,stm,name):
                             fname=fname+'_'+pname
                     fname=fname[-40:]+'_'+pname
                     fname=fname[0:60]
-                    fname=six.ensure_binary(fname.replace('\n','').replace('\r',''))
+                    fname=fname.replace('\n','').replace('\r','')
                     fname = re.sub('[\/:*?"<>|]','-',fname)
                     url=getvideourl(item['pc'],item['fid'],stm)
                     if url!='':
