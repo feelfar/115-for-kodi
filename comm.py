@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
-# comm.py
+# py
 from  __future__  import unicode_literals
 
 import sys
 
-import xbmc,xbmcvfs,json,gzip,time,os
+import xbmc,xbmcvfs,xbmcgui,xbmcaddon,json,gzip,time,os
 
 try:
     xbmc.translatePath = xbmcvfs.translatePath
@@ -12,6 +12,7 @@ except AttributeError:
     pass
 from traceback import format_exc
 
+_addon = xbmcaddon.Addon()
 __cwd__ = os.path.dirname(__file__)
 __lib__ = xbmc.translatePath( os.path.join( __cwd__, 'lib' ) )
 sys.path.append (__lib__)
@@ -29,15 +30,15 @@ import six
 from six.moves.urllib import parse
 from six.moves.urllib import request
 from six.moves import http_cookiejar as cookielib
-from commfunc import get_storage
+from commfunc import keyboard,get_storage,get_setting,ListItem,add_items
 
-from xbmcswift2 import Plugin
-plugin = Plugin()
+import routing
+#from xbmcswift2 import Plugin
+plugin = routing.Plugin()
 setthumbnail=False
 
 moviepoint={}
 subcache=get_storage('subcache')
-searchvalues=get_storage('searchvalues')
 
 colors = {'dir': 'FF9966','video': 'FF0033','bt': '33FF00', 'audio': '66CCCC', 'subtitle':'505050', 'image': '99CC33',
         'back': '0099CC','next':'CCCCFF', 'menu':'CCFF66', 'star1':'FFFF00','star0':'777777','sort':'666699','filter':'0099CC',
@@ -85,6 +86,7 @@ def colorize_label(label, _class=None, color=None):
 
 @plugin.route('/showpic/<imageurl>')
 def showpic(imageurl):
+    imageurl=parse.unquote_plus(imageurl)
     xbmc.executebuiltin("ShowPicture(%s)" % (imageurl))
     return
 
@@ -110,4 +112,3 @@ def shellopenurl(url,samsung):
         # ___ Open media with standard android web browser
         xbmc.executebuiltin('StartAndroidActivity(%s,android.intent.action.VIEW,,%s)'%(androidbrowser,url))
         
-
