@@ -990,6 +990,7 @@ def index():
         {'label': '星标列表', 'path': plugin.url_for('getfilelist',cid='0',offset=0,star='1',typefilter=0,searchstr='0',changesort='0'),'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'star.png') )},
         {'label': '离线任务列表', 'path': plugin.url_for('offline_list'),'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'offlinedown.png') )},
         #{'label': '网盘搜索', 'path': plugin.url_for('search',cid='0',mstr='0',offset=0),'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'disksearch.png') )},
+        {'label': '网盘标签', 'path': plugin.url_for(pantagsearch,otherargs='{}'),'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'tag.png') )},
         {'label': '搜索', 'path': plugin.url_for('searchinit',stypes='pan,bt,db,jav',sstr='0',modify='0',otherargs='{}'),'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'disksearch.png') )},
         #{'label': '磁力搜索', 'path': plugin.url_for('btsearchother',sstr='0', modify='0'),'thumbnail':xbmc.translatePath(os.path.join( IMAGES_PATH, 'magnet.png'))},
         {'label': '豆瓣标签', 'path': plugin.url_for('dbmovie',tags='0',sort='U',page='0',addtag='0',scorerange='0',year_range='0'),
@@ -1046,7 +1047,7 @@ def stypesearch(liststypes,sstr,dictotherargs):
 
 def selectstr(sstr):
     #strlist=re.split(r'[\s\x2E\x5B\x5D\x28\x29\x3C\x3E\x5F]+', sstr)
-    strlist=re.split(r'[\s\u0021-\u002F\u003A-\u0040\uFF01-\uFF0F\uFF1A-\uFF20]+', sstr)
+    strlist=re.split(r'[\s\u0021-\u002C\u002E-\u002F\u003A-\u0040\u005B-\u0060\u007B-\u007E\uFF01-\uFF0F\uFF1A-\uFF20\uFF5B-\uFF65]+', sstr)
     #notify(strlist)
     strsel=''
     dialog = xbmcgui.Dialog()
@@ -1134,8 +1135,9 @@ def searchinit(stypes,sstr,modify,otherargs):
                 comm.searchvalues.sync()
                 return
             comm.searchvalues['strlist']= [e for e in comm.searchvalues['strlist'] if e!=newsstr]
-            updataurl=plugin.url_for('searchinit',stypes=stypes,sstr=six.ensure_binary(newsstr),modify='0',otherargs=otherargs)
-            xbmc.executebuiltin('Container.update(%s)'%updataurl)
+            updataurl=plugin.url_for('searchinit',stypes=stypes,sstr=six.ensure_binary(newsstr),modify='1',otherargs=otherargs)
+            #xbmc.executebuiltin('Container.update(%s)'%updataurl)
+            xbmc.executebuiltin('RunPlugin(%s)'%updataurl)
         if modify=='2':
             comm.searchvalues['strlist']= [e for e in comm.searchvalues['strlist'] if e!=sstr]
             xbmc.executebuiltin('Container.Refresh()')
