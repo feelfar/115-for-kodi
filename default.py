@@ -455,15 +455,22 @@ class api_115(object):
                     
     def notedeleteolds(self,cname):
         state=False
-        cid=self.notegetcateid(cname)
-        data=self.notelist(cid=cid,start=90)
-        nids=''
-        if data['state'] and data['data']:
-            for note in data['data']:
-                nids=nids+note['nid']+','
-        if nids:
-            data = self.notedelete(nid=nids)
-            state = data['state']
+        try:
+            cid=self.notegetcateid(cname)
+            while True:
+                nids=''
+                data=self.notelist(cid=cid,start=90)
+                state = data['state']
+                if data['state'] and data['data']:
+                    for note in data['data']:
+                        nids=nids+note['nid']+','
+                if nids:
+                    data = self.notedelete(nid=nids)
+                    state = data['state']
+                else:
+                    break
+        except:
+            return False
         return state
         
     def getcookiesstr(self):
@@ -1195,9 +1202,10 @@ def pansearch(cid,mstr,offset):
             items.append({'label': colorize_label('下一页', 'next'),
                 'path': plugin.url_for('pansearch',cid=cid,mstr=mstr,offset=str(int(offset)+int(pageitem))),
                 'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'nextpage.png') )})
-        plugin.set_content('movies')
+        #plugin.set_content('movies')
         
         if imagecount >= 10 and imagecount * 2 > len(items):
+            #plugin.set_content('images')
             comm.setthumbnail=True
         return items
     else:
@@ -1232,7 +1240,8 @@ def getListItem(item,pathname=''):
             
         elif 'ms' in item:
             #imgurl=getimgurl(item['pc'])
-            listitem=ListItem(label=colorize_label(item['n'], 'image'), label2=None, icon=None, thumbnail=None, path=plugin.url_for('playimg',pc=item['pc'],name=six.ensure_binary(item['n'])))
+            listitem=ListItem(label=colorize_label(item['n'], 'image'), label2=None, icon=None, thumbnail=xbmc.translatePath(os.path.join( IMAGES_PATH, 'picture.png')),
+                    path=plugin.url_for('playimg',pc=item['pc'],name=six.ensure_binary(item['n'])))
             #listitem=ListItem(label=colorize_label(item['n'], 'image'), label2=None, icon=None, thumbnail=None, path=imgurl)
             #listitem.set_info('pictures', {"Title": item['n'] } )
             listitem.playable=False
@@ -1611,8 +1620,9 @@ def getfilelist(cid,offset,star,typefilter='0',searchstr='0',changesort='0'):
                 'path': plugin.url_for('getfilelist',cid=cid,offset=str(int(offset)+int(pageitem)),
                                         star=star,typefilter=typefilter,searchstr=six.ensure_binary(searchstr),changesort='0'),
                 'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'nextpage.png') )})
-        plugin.set_content('movies')
+        #plugin.set_content('movies')
         if imagecount >= 10 and imagecount * 2 > len(items):
+            #plugin.set_content('images')
             comm.setthumbnail=True
         #notify(str(comm.subcache.raw_dict()))
         return items

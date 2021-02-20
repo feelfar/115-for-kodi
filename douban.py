@@ -76,7 +76,7 @@ def dbclips(subject):
                 'info_type':'video',
                 'info':{'title':movtitle}
                 })
-    plugin.set_content('movies')
+    #plugin.set_content('movies')
     comm.setthumbnail=True
     return menus
 
@@ -114,7 +114,7 @@ def dbphotos(subject,pictype='S',page=0):
             menus.append({'label':'下一页','thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'nextpage.png') ),
                     'path':  plugin.url_for('dbphotos', subject=subject,pictype=pictype,page=int(page)+1)})
     
-    plugin.set_content('images')
+    #plugin.set_content('images')
     comm.setthumbnail=True
     #notify('dbphotos:'+subject)
     return menus
@@ -410,7 +410,7 @@ def dbmovie(tags='',sort='U',page=0,addtag=0,scorerange='',year_range=''):
         
         menus.insert(0, {'label': '排序:[COLOR FFFF3333]%s[/COLOR]'%(sorttype),
             'path': plugin.url_for('dbmovie',tags=six.ensure_binary(tags2),sort='set',page='0',addtag='0',scorerange=scorerange,year_range=year_range)})
-        plugin.set_content('movies')
+        #plugin.set_content('movies')
         comm.setthumbnail=True
         return menus
     except Exception as e:
@@ -519,7 +519,7 @@ def celephotos(cele,page=0):
         if int(page)<totalpage:
             menus.append({'label':'下一页','thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'nextpage.png') ),
                     'path':  plugin.url_for('celephotos', cele=cele,page=int(page)+1)})
-    plugin.set_content('images')
+    #plugin.set_content('images')
     comm.setthumbnail=True
     return menus
     
@@ -590,7 +590,7 @@ def dbactor(sstr,sort='time',page=0):
             if int(page)<totalpage:
                 menus.append({'label':'下一页','thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'nextpage.png') ),
                         'path':  plugin.url_for('dbactor',sstr=six.ensure_binary(sstr),sort=sort,page=int(page)+1)})
-        plugin.set_content('images')
+        #plugin.set_content('images')
         comm.setthumbnail=True
         return menus
         return menus
@@ -621,7 +621,7 @@ def dbntop():
         rsp = _http('http://movie.douban.com/chart')
         menus=rspmenus(rsp)
         comm.setthumbnail=True
-        plugin.set_content('movies')
+        #plugin.set_content('movies')
         return menus
     except:
         xbmc.log(msg=format_exc(),level=xbmc.LOGERROR)
@@ -657,7 +657,7 @@ def dbtop(page):
                           'path': plugin.url_for('dbtop', page=page+1),
                           'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'nextpage.png') )})
         
-        plugin.set_content('movies')
+        #plugin.set_content('movies')
         comm.setthumbnail=True
         return menus
     except:
@@ -691,7 +691,7 @@ def dbtypetop(dbtype='1',start=0):
                 'path': plugin.url_for('dbtypetop',dbtype=dbtype,start=int(start)+20),
                 'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'nextpage.png') )})
         
-        plugin.set_content('movies')
+        #plugin.set_content('movies')
         comm.setthumbnail=True
         return menus
     except:
