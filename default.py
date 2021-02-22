@@ -390,7 +390,7 @@ class api_115(object):
         return self.jsonload(data)
     
     def notedelete(self,nid):
-        data = parse.urlencode(encode_obj({'nid': id}))
+        data = parse.urlencode(encode_obj({'nid': nid}))
         data = self.urlopen('https://note.115.com/?ct=note&ac=delete',data=data)
         return self.jsonload(data)
         
@@ -463,7 +463,7 @@ class api_115(object):
                 state = data['state']
                 if data['state'] and data['data']:
                     for note in data['data']:
-                        nids=nids+note['nid']+','
+                        nids=nids+str(note['nid'])+','
                 if nids:
                     data = self.notedelete(nid=nids)
                     state = data['state']
