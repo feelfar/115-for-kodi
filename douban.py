@@ -218,7 +218,7 @@ def dbsubject(subject):
             '''
             context_menu_items=[]
             context_menu_items.append(('搜索'+colorize_label(sstr, color='00FF00'), 
-                'RunPlugin('+plugin.url_for('searchinit',stypes='pan,bt',sstr=six.ensure_binary(sstr),modify='1',otherargs='{}')+')',))
+                'Container.update('+plugin.url_for('searchinit',stypes='pan,bt',sstr=six.ensure_binary(sstr),modify='1',otherargs='{}')+')',))
             listitem=ListItem(label='BT:[COLOR FF00FFFF]%s[/COLOR]' % (six.ensure_text(sstr)),
                 label2=None, icon=None,
                 thumbnail=xbmc.translatePath( os.path.join( IMAGES_PATH, 'magnet.png') ),
@@ -244,7 +244,7 @@ def dbsubject(subject):
             menus.append({'label': '[COLOR FFFF66AA]%s[/COLOR]%s' % (cast['name'],cast['role']),
                     'path':  plugin.url_for('dbactor', sstr=six.ensure_binary(cast['id']),sort='time',page=0),
                     'context_menu':[('搜索'+colorize_label(cast['name'], color='00FF00'), 
-                        'RunPlugin('+plugin.url_for('searchinit',stypes='pan,bt,db',sstr=six.ensure_binary(cast['name']),modify='1',otherargs='{}')+')',)],
+                        'Container.update('+plugin.url_for('searchinit',stypes='pan,bt,db',sstr=six.ensure_binary(cast['name']),modify='1',otherargs='{}')+')',)],
                     'thumbnail':thumb})
         
         menus.append({'label': '年代:[COLOR FF00AAFF]%s[/COLOR]' % (year),'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'tag.png') ),
@@ -381,7 +381,7 @@ def dbmovie(tags='',sort='U',page=0,addtag=0,scorerange='',year_range=''):
                 .replace('第十一季','s11').replace('第十二季','s12').replace('第十三季','s13').replace('第十四季','s14').replace('第十五季','s15')\
                 .replace('第十六季','s16').replace('第十七季','s17').replace('第十八季','s18').replace('第十九季','s19').replace('第二十季','s20')
             context_menu_items.append(('搜索'+colorize_label(searchtitle, color='00FF00'), 
-                'RunPlugin('+plugin.url_for('searchinit',stypes='pan,bt,db',sstr=six.ensure_binary(searchtitle),modify='1',otherargs='{}')+')',))
+                'Container.update('+plugin.url_for('searchinit',stypes='pan,bt,db',sstr=six.ensure_binary(searchtitle),modify='1',otherargs='{}')+')',))
                 
             listitem=ListItem(label='%s[[COLOR FFFF3333]%s[/COLOR]]'%(m['title'],m['rate']),
                     thumbnail= m['cover'], 
@@ -435,7 +435,7 @@ def rspmenus(rsp):
             menus.append({'label': '{0}. {1}[{2}][{3}]'.format(s, i[2], rating, i[3]),
                  'path': plugin.url_for('dbsubject', subject=i[0][i[0].find('subject')+7:].replace('/','')),
                  'context_menu':[('搜索'+colorize_label(i[2], color='00FF00'), 
-                    'RunPlugin('+plugin.url_for('searchinit',stypes='pan,bt',sstr=six.ensure_binary(i[2]),modify='1',otherargs='{}')+')',)],
+                    'Container.update('+plugin.url_for('searchinit',stypes='pan,bt',sstr=six.ensure_binary(i[2]),modify='1',otherargs='{}')+')',)],
                 'thumbnail': i[1],})
                  #'thumbnail': i[1].replace('ipst','lpst').replace('img3.douban.com','img4.douban.com'),})
         return menus
@@ -473,7 +473,7 @@ def dbsearch(sstr, page=0):
                         'path': plugin.url_for('dbsubject', subject=m.group(1)),
                         'thumbnail': m.group(2),
                         'context_menu':[('搜索'+colorize_label(searchtitle, color='00FF00'), 
-                            'RunPlugin('+plugin.url_for('searchinit',stypes='pan,bt',sstr=six.ensure_binary(m.group(2)),modify='1',otherargs='{}')+')',)],
+                            'Container.update('+plugin.url_for('searchinit',stypes='pan,bt',sstr=six.ensure_binary(m.group(2)),modify='1',otherargs='{}')+')',)],
                         })
                 else:
                     plugin.log.error(item)
@@ -573,7 +573,7 @@ def dbactor(sstr,sort='time',page=0):
             
             context_menu_items=[]
             context_menu_items.append(('搜索'+colorize_label(sub.group('title'), color='00FF00'), 
-                'RunPlugin('+plugin.url_for('searchinit',stypes='pan,bt,db',sstr=six.ensure_binary(sub.group('title')),modify='1',otherargs='{}')+')',))
+                'Container.update('+plugin.url_for('searchinit',stypes='pan,bt,db',sstr=six.ensure_binary(sub.group('title')),modify='1',otherargs='{}')+')',))
                 
             listitem=ListItem(label='%s[[COLOR FFFF3333]%s[/COLOR]]'%(sub.group('title'),rate),
                     thumbnail= sub.group('imgurl'), 
@@ -648,7 +648,7 @@ def dbtop(page):
                       'path': plugin.url_for('dbsubject', subject=i[0][i[0].find('subject')+7:].replace('/','')),
                       'thumbnail': i[2],
                       'context_menu':[('搜索'+colorize_label(searchtitle, color='00FF00'), 
-                        'RunPlugin('+plugin.url_for('searchinit',stypes='pan,bt',sstr=six.ensure_binary(i[1]),modify='1',otherargs='{}')+')',)],
+                        'Container.update('+plugin.url_for('searchinit',stypes='pan,bt',sstr=six.ensure_binary(i[1]),modify='1',otherargs='{}')+')',)],
                       #'thumbnail': i[2].replace('ipst','lpst').replace('img3.douban.com','img4.douban.com'),
                  })
         
@@ -682,7 +682,7 @@ def dbtypetop(dbtype='1',start=0):
                 'path': plugin.url_for('dbsubject', subject=m['id']),
                 'thumbnail': m['cover_url'],
                 'context_menu':[('搜索'+colorize_label(m['title'], color='00FF00'), 
-                    'RunPlugin('+plugin.url_for('searchinit',stypes='pan,bt',sstr=six.ensure_binary(m['title']),modify='1',otherargs='{}')+')',)],
+                    'Container.update('+plugin.url_for('searchinit',stypes='pan,bt',sstr=six.ensure_binary(m['title']),modify='1',otherargs='{}')+')',)],
                 })
             
         if not len(menus)>1: return

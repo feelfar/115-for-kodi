@@ -1021,6 +1021,7 @@ def btsearchother():
     return magnet.btsearchInit(sstr='0', modify='0')
 
 def stypesearch(liststypes,sstr,dictotherargs):
+    xbmc.log(msg=sstr,level=xbmc.LOGERROR)
     stypedict={'pan':'网盘搜索','bt':'磁力搜索','db':'豆瓣搜索','jav':'JAVBUS搜索'}
     stype=''
     if len(liststypes)==1:
@@ -1033,7 +1034,6 @@ def stypesearch(liststypes,sstr,dictotherargs):
         sel = dialog.select('搜索'+colorize_label(sstr, color='FFFF00'), [q[1] for q in selectlist])
         if sel>=0:
             stype= selectlist[sel][0]
-            
     if stype=='pan':
         cid='0'
         if 'cid' in dictotherargs:
@@ -1112,7 +1112,6 @@ def searchinit(stypes,sstr,modify,otherargs):
     dictotherargs=json.loads(otherargs)
     if not isinstance(dictotherargs,dict):
         dictotherargs={}
-    #notify(str(modify)+ sstr)
     if sstr and sstr!='0' and modify=='0':
         comm.searchvalues['strlist']= [e for e in comm.searchvalues['strlist'] if six.ensure_binary(e)!=six.ensure_binary(sstr)]
         comm.searchvalues['strlist'].append(sstr)
@@ -1127,24 +1126,39 @@ def searchinit(stypes,sstr,modify,otherargs):
                 return
             comm.searchvalues['strlist']= [e for e in comm.searchvalues['strlist'] if e!=sstr]
             comm.searchvalues['strlist']= [e for e in comm.searchvalues['strlist'] if e!=newsstr]
+            comm.searchvalues['strlist'].append(newsstr)
+            comm.searchvalues.sync()
+            return stypesearch(liststypes,newsstr,dictotherargs)
             #comm.searchvalues['strlist'].append(newsstr)
+            '''
             if not sstr:
                 comm.searchvalues['strlist'].append(newsstr)
                 comm.searchvalues.sync()
                 return stypesearch(liststypes,newsstr,dictotherargs)
             else:
                 updataurl=plugin.url_for('searchinit',stypes=stypes,sstr=six.ensure_binary(newsstr),modify='0',otherargs=otherargs)
-                xbmc.executebuiltin('Container.update(%s)'%updataurl)
-                #return RunPlugin(updataurl)
+                #xbmc.log(msg=updataurl,level=xbmc.LOGERROR)
+                #xbmc.executebuiltin('Container.update(%s)'%updataurl)
+                xbmc.executebuiltin('RunPlugin(%s)'%updataurl)
+                #xbmc.executebuiltin('Container.update(RunPlugin(%s))'%updataurl)'''
         if modify=='4':
             newsstr=selectstr(sstr)
             if not newsstr:
                 comm.searchvalues.sync()
                 return
+            newsstr = keyboard(text=newsstr).strip()
+            if not newsstr:
+                comm.searchvalues.sync()
+                return
+            comm.searchvalues['strlist']= [e for e in comm.searchvalues['strlist'] if e!=sstr]
             comm.searchvalues['strlist']= [e for e in comm.searchvalues['strlist'] if e!=newsstr]
-            updataurl=plugin.url_for('searchinit',stypes=stypes,sstr=six.ensure_binary(newsstr),modify='1',otherargs=otherargs)
+            comm.searchvalues['strlist'].append(newsstr)
+            comm.searchvalues.sync()
+            return stypesearch(liststypes,newsstr,dictotherargs)
+            #comm.searchvalues['strlist']= [e for e in comm.searchvalues['strlist'] if e!=newsstr]
+            #updataurl=plugin.url_for('searchinit',stypes=stypes,sstr=six.ensure_binary(newsstr),modify='1',otherargs=otherargs)
             #xbmc.executebuiltin('Container.update(%s)'%updataurl)
-            xbmc.executebuiltin('RunPlugin(%s)'%updataurl)
+            #xbmc.executebuiltin('RunPlugin(%s)'%updataurl)
         if modify=='2':
             comm.searchvalues['strlist']= [e for e in comm.searchvalues['strlist'] if e!=sstr]
             xbmc.executebuiltin('Container.Refresh()')
@@ -1220,7 +1234,9 @@ def getListItem(item,pathname=''):
     #plugin.log.error(item)
     context_menu_items=[]
     context_menu_items.append(('搜索'+colorize_label(item['n'], color='00FF00'), 
-        'RunPlugin('+plugin.url_for('searchinit',stypes='pan,bt,db,jav',sstr=six.ensure_binary(item['n']),modify='4',otherargs='0')+')',))
+        'Container.update('+plugin.url_for('searchinit',stypes='pan,bt,db,jav',sstr=six.ensure_binary(item['n']),modify='4',otherargs='0')+')',))
+    #context_menu_items.append(('搜索'+colorize_label(item['n'], color='00FF00'), 
+    #    'RunPlugin('+plugin.url_for('searchinit',stypes='pan,bt,db,jav',sstr=six.ensure_binary(item['n']),modify='4',otherargs='0')+')',))
     if 'sha' in item:
         context_menu_items.append(('用'+colorize_label('浏览器','dir')+'打开代理链接', 
                 'RunPlugin('+plugin.url_for('shellopen',pc=item['pc'],fname=six.ensure_binary(item['n']))+')',))

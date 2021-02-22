@@ -175,7 +175,7 @@ def javdetail(qbbb='qb',movieno='0',id='0',title='0'):
     context_menu_items=[]
     '''
     context_menu_items.append(('搜索'+colorize_label(id, color='00FF00'), 
-        'RunPlugin('+plugin.url_for('searchinit',stypes='pan,bt',sstr=six.ensure_binary(id),modify='1',otherargs='{}')+')',))
+        'Container.update('+plugin.url_for('searchinit',stypes='pan,bt',sstr=six.ensure_binary(id),modify='1',otherargs='{}')+')',))
         
     listitem=ListItem(label='BT:[COLOR FF00FFFF]%s[/COLOR]' % (id),
             thumbnail=xbmc.translatePath( os.path.join( IMAGES_PATH, 'magnet.jpg') ), 
@@ -187,7 +187,7 @@ def javdetail(qbbb='qb',movieno='0',id='0',title='0'):
     title=six.ensure_text(title)
     context_menu_items=[]
     context_menu_items.append((six.ensure_binary('搜索'+colorize_label(title, color='00FF00')), 
-        'RunPlugin('+plugin.url_for('searchinit',stypes='pan,bt',sstr=six.ensure_binary(title),modify='1',otherargs='{}')+')',))
+        'Container.update('+plugin.url_for('searchinit',stypes='pan,bt',sstr=six.ensure_binary(title),modify='1',otherargs='{}')+')',))
         
     listitem=ListItem(label='BT:[COLOR FF00FFFF]%s[/COLOR]' % (title),
             thumbnail=xbmc.translatePath( os.path.join( __cwd__, 'magnet.jpg') ), 
@@ -252,7 +252,7 @@ def javdetail(qbbb='qb',movieno='0',id='0',title='0'):
                 menus.append({'label':'%s:%s'%(filtertypename,filtername),
                       'path':plugin.url_for('javlist', qbbb=qbbb,filtertype=filtertype,filterkey=filterkey,page=1),
                       'context_menu':[('搜索'+colorize_label(filtername, color='00FF00'), 
-                        'RunPlugin('+plugin.url_for('searchinit',stypes='pan,bt,jav',sstr=six.ensure_binary(filtername),modify='1',otherargs='{}')+')',)]
+                        'Container.update('+plugin.url_for('searchinit',stypes='pan,bt,jav',sstr=six.ensure_binary(filtername),modify='1',otherargs='{}')+')',)]
                       })
     releech='"genre"><a\x20href="%s/(?P<filter_type>[a-z]+?)/(?P<filter_key>[0-9a-z]+?)">(?P<filter_name>.*?)</a>'%(javbusurl[qbbb])
     
@@ -270,7 +270,7 @@ def javdetail(qbbb='qb',movieno='0',id='0',title='0'):
                 menus.append({'label':'%s:%s'%(filtertypename,filtername),
                       'path':plugin.url_for('javlist', qbbb=qbbb,filtertype=filtertype,filterkey=filterkey,page=1),
                        'context_menu':[('搜索'+colorize_label(filtername, color='00FF00'), 
-                        'RunPlugin('+plugin.url_for('searchinit',stypes='pan,bt,jav',sstr=six.ensure_binary(filtername),modify='1',otherargs='{}')+')',)]
+                        'Container.update('+plugin.url_for('searchinit',stypes='pan,bt,jav',sstr=six.ensure_binary(filtername),modify='1',otherargs='{}')+')',)]
                       })
     releech='avatar-box.*?href="%s/star/(?P<starid>.*?)">.*?src="(?P<starimg>.*?)".*?<span>(?P<starname>.*?)</span>'%(javbusurl[qbbb])
     if qbbb=='om':
@@ -279,7 +279,7 @@ def javdetail(qbbb='qb',movieno='0',id='0',title='0'):
     for match in leech.finditer(rsp):
         context_menu_items=[]
         context_menu_items.append(('搜索'+colorize_label(match.group('starname'), color='00FF00'), 
-            'RunPlugin('+plugin.url_for('searchinit',stypes='pan,bt,jav',sstr=six.ensure_binary(match.group('starname')),modify='1',otherargs='{}')+')',))
+            'Container.update('+plugin.url_for('searchinit',stypes='pan,bt,jav',sstr=six.ensure_binary(match.group('starname')),modify='1',otherargs='{}')+')',))
             
         listitem=ListItem(label='优优:%s'%(match.group('starname')),
                 thumbnail=match.group('starimg'), 
@@ -482,7 +482,7 @@ def javlist(qbbb='qb',filtertype='0',filterkey='0',page=1):
             movieno=detailurl[detailurl.rfind('/')+1:]
             context_menu_items=[]
             context_menu_items.append(('搜索'+colorize_label(match.group('id'), color='00FF00'), 
-                'RunPlugin('+plugin.url_for('searchinit',stypes='pan,bt',sstr=match.group('id'),modify='1',otherargs='{}')+')',))
+                'Container.update('+plugin.url_for('searchinit',stypes='pan,bt',sstr=match.group('id'),modify='1',otherargs='{}')+')',))
             coverimg=match.group('imageurl').replace('thumb','cover').replace('.jpg','_b.jpg')
             listitem=ListItem(label='[[COLOR FFFFFF00]%s[/COLOR]]%s(%s)'%(match.group('id'), match.group('title'), match.group('date')),
                     thumbnail=match.group('imageurl'), path= plugin.url_for('javdetail',qbbb=qbbb, movieno=movieno,id=match.group('id'),
@@ -528,7 +528,7 @@ def javstarlist(qbbb='qb',page=1):
         for match in leech.finditer(rsp):
             context_menu_items=[]
             context_menu_items.append(('搜索'+colorize_label(match.group('starname'), color='00FF00'), 
-                'RunPlugin('+plugin.url_for('searchinit',stypes='pan,bt',sstr=six.ensure_binary(match.group('starname')),modify='1',otherargs='{}')+')',))
+                'Container.update('+plugin.url_for('searchinit',stypes='pan,bt',sstr=six.ensure_binary(match.group('starname')),modify='1',otherargs='{}')+')',))
                 
             listitem=ListItem(label='优优:%s'%(match.group('starname')),
                     thumbnail=match.group('starimg'), path= plugin.url_for('javlist', qbbb=qbbb,filtertype='star',filterkey=match.group('starid'),page=1),)
