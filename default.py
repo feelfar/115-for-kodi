@@ -252,16 +252,18 @@ class api_115(object):
                 return rsp;
             content = b''
             try:
-                if 'Set-Cookie' in rsp.headers:
-                    downcookies = re.findall(r'(?:[0-9abcdef]{20,}|acw_tc)\s*\x3D\s*[0-9abcdef]{20,}', str(rsp.headers), re.DOTALL | re.MULTILINE)
-                    self.downcookie=''
-                    for downcook in downcookies:
-                        self.downcookie+=downcook+';'
+                self.downcookie=''
+                for key,value in rsp.headers.items():
+                    if key.lower()=='set-cookie':
+                        downcookies = re.findall(r'(?:[0-9abcdef]{20,}|acw_tc)\s*\x3D\s*[0-9abcdef]{20,}', value, re.DOTALL | re.MULTILINE)
+                        for downcook in downcookies:
+                            self.downcookie+=downcook+';'
             
                 if rsp.headers.get('content-encoding', '') == 'gzip':
                     content = gzip.GzipFile(fileobj=six.BytesIO(rsp.read())).read()
                 else:
                     content = rsp.read()
+                rsp.close()
             except:
                 pass
             if binary:
