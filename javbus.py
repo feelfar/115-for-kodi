@@ -255,6 +255,7 @@ def javdetail(qbbb='qb',movieno='0',id='0',title='0'):
                         'Container.update('+plugin.url_for('searchinit',stypes='pan,bt,jav',sstr=six.ensure_binary(filtername),modify='1',otherargs='{}')+')',)]
                       })
     releech='"genre"><a\x20href="%s/(?P<filter_type>[a-z]+?)/(?P<filter_key>[0-9a-z]+?)">(?P<filter_name>.*?)</a>'%(javbusurl[qbbb])
+    releech='<a\x20href="%s/(?P<filter_type>[a-z]+?)/(?P<filter_key>[0-9a-z]+?)">(?P<filter_name>.*?)</a>'%(javbusurl[qbbb])
     
     
     leech = re.compile(releech, re.S)
@@ -384,12 +385,12 @@ def freepv(movieid=''):
             videourl='http://smovie.pacopacomama.com/sample/movies/%s/1080p.mp4'%(movid)
         elif studio=='東京熱':
             
-            videodata=_http('http://www.tokyo-hot.com/product/?q=%s'%(movid))
+            videodata=_http('https://www.tokyo-hot.com/product/?q=%s'%(movid))
             match = re.search(r'[\x22\x27]\x2Fproduct\x2F(?P<no>[^\s]+?)\x2F[\x22\x27]', videodata, re.DOTALL | re.MULTILINE)
             if match:
                 movid2 = match.group('no')
                 #notify(movid2)
-                videodata=_http('http://www.tokyo-hot.com/product/%s/'%(movid2))
+                videodata=_http('https://www.tokyo-hot.com/product/%s/'%(movid2))
                 
                 match2 = re.search(r'mp4[\x22\x27]\s+src\s*=\s*[\x22\x27](?P<src>.*?mp4)[\x22\x27]', videodata, re.DOTALL | re.MULTILINE)
                 if match2:
@@ -397,7 +398,10 @@ def freepv(movieid=''):
                         
         #if studio=='キャットウォーク':
         else:
-            videourl='http://www.aventertainments.com/newdlsample.aspx?site=ppv&whichone=ppv/mp4/DL%s.mp4|Referer=http://www.aventertainments.com/product_lists.aspx'%(movid)
+            #videourl='http://www.aventertainments.com/newdlsample.aspx?site=ppv&whichone=ppv/mp4/DL%s.mp4|Referer=http://www.aventertainments.com/product_lists.aspx'%(movid)
+            videourl='https://ppvclips03.aventertainments.com/00m3u8/%s/%s.m3u8'%(movid,movid)
+            if not url_is_alive(videourl):
+                videourl='https://ppvclips03.aventertainments.com/01m3u8/%s/%s.m3u8'%(movid,movid)
         #if not comm.url_is_alive(videourl):
         #	videourl=''
 
