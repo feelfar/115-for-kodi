@@ -6,8 +6,9 @@ try:
     xbmc.translatePath = xbmcvfs.translatePath
 except AttributeError:
     pass
-import comm,six
-from six.moves.urllib import parse
+import comm
+import lib.six as six
+from lib.six.moves.urllib import parse
 from traceback import format_exc
 plugin = comm.plugin
 __cwd__=comm.__cwd__

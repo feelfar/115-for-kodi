@@ -7,7 +7,8 @@ try:
     xbmc.translatePath = xbmcvfs.translatePath
 except AttributeError:
     pass
-import comm,six
+import comm
+import lib.six as six
 from xbmcswift2 import ListItem
 plugin = comm.plugin
 IMAGES_PATH = comm.IMAGES_PATH

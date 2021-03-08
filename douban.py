@@ -7,9 +7,10 @@ try:
 except AttributeError:
     pass
 from traceback import format_exc
-import comm,six
-from six.moves import html_parser
-from six.moves.urllib import parse
+import comm
+import lib.six as six
+from lib.six.moves import html_parser
+from lib.six.moves.urllib import parse
 plugin = comm.plugin
 __cwd__=comm.__cwd__
 __resource__ =comm.__resource__

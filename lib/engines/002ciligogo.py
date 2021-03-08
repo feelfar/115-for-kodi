@@ -4,7 +4,7 @@
 from  __future__  import unicode_literals
 import json,re
 from commfunc import keyboard,_http,encode_obj
-from six.moves.urllib import parse
+from lib.six.moves.urllib import parse
 from traceback import format_exc
 from xbmcswift2 import Plugin
 plugin=Plugin()

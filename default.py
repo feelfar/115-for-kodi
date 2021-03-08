@@ -27,10 +27,10 @@ IMAGES_PATH = comm.IMAGES_PATH
 __subpath__  = comm.__subpath__
 __temppath__  = comm.__temppath__
 
-import six
-from six.moves.urllib import parse
-from six.moves.urllib import request
-from six.moves import http_cookiejar as cookielib
+import lib.six as six
+from lib.six.moves.urllib import parse
+from lib.six.moves.urllib import request
+from lib.six.moves import http_cookiejar as cookielib
 
 from commfunc import keyboard,_http,encode_obj,notify
 
