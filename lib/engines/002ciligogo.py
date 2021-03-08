@@ -9,7 +9,7 @@ from traceback import format_exc
 from xbmcswift2 import Plugin
 plugin=Plugin()
 class ciligogo(object):
-    url = 'http://www.btmovi.cc/so'
+    url = 'http://www.btmovi.vip/so'
     name = 'ciligogo'
     support_sort=['relevance','addtime','size','popular'];
     page_result_count=10;
