@@ -19,9 +19,9 @@ except ImportError:
 
 from datetime import datetime
 
-import six
-from six.moves.urllib import parse
-from six.moves.urllib import request
+import lib.six as six
+from lib.six.moves.urllib import parse
+from lib.six.moves.urllib import request
 
 def get_installedversion():
     # retrieve current installed version

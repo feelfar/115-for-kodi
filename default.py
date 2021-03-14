@@ -1299,7 +1299,7 @@ def getListItem(item,pathname=''):
         if is_subtitle(item['ico']):            
             if item['ico'].lower()=='idx' or item['ico'].lower()=='sub':
                 subname=(item['n'][:item['n'].rfind('.')]+'.idx_sub')
-                if subname in subcache.raw_dict():
+                if subname in comm.subcache.raw_dict():
                     comm.subcache[subname][item['ico'].lower()]=item['pc']
                 else:
                     comm.subcache[subname]={}
