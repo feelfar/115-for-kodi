@@ -36,7 +36,7 @@
 from  __future__  import unicode_literals
 
 import re,threading,xbmc
-try: 
+try:
     import Queue
 except ImportError:
     import queue as Queue
@@ -176,6 +176,7 @@ def search(searchengine,what,sort,maxresult=20):
             # #bind class name
             engineclass = getattr(engine_module, engi[3:])
             engineclass = engineclass()
+            engineclass.getsearchurl()
             enginclasslist.append(engineclass)
         except:
             pass

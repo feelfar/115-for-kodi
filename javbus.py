@@ -56,42 +56,38 @@ def javbus():
 @plugin.route('/getjavbusurl')
 def getjavbusurl():
     javbusurl['existmag']='all'
-    urls=['https://www.javbus.com']
+    
+    urls=[]
+    oldurls=plugin.get_setting('javbusfb').lower().split(';')
+    
+    for url in oldurls:
+        if url_is_alive(url): 
+            urls.append(url.strip().rstrip('/'))
+    
+    if len(urls)<=0:
+        rsp=comm.jubt()
+        match = re.search(r"window\x2Eopen\x28[\x22\x27](?P<url>(?:http|https)\x3A[\w\x2E\x2F]*?)[\x22\x27](?:(?!window).)*?strong\x3EJavBus\s*\x7C.*?\x3C\x2Fdiv\x3E", rsp, re.IGNORECASE | re.DOTALL)
+        if match:
+            urls = [match.group('url').strip().rstrip('/')]
+    if len(urls)>0:
+        #notify(urls[0])
+        rsp=_http(urls[0])
+        for match in re.finditer(r"[\x22\x27]nofollow[\x22\x27]\x3E(?P<url>(?:http|https)\x3A[\w\x2E\x2F]*?)\x3C\x2Fa\x3E", rsp, re.IGNORECASE | re.DOTALL):
+            urls.append(match.group('url'))
+        match = re.search(r"href\x3D[\x22\x27](?P<url>(?:http|https)\x3A[\w\x2E\x2F]*?)[\x22\x27]\x3E歐美", rsp, re.IGNORECASE | re.DOTALL)
+        if match:
+            plugin.set_setting('javbusom',match.group('url').strip().rstrip('/'))
+    if len(urls)<=0:
+        notify('JAVBUS网址更新失败！')
+    else:
+        javbusfb=''
+        urls = list(set(urls))
+        for url in urls:
+            javbusfb+=url+';'
+        plugin.set_setting('javbusfb',javbusfb)
+    urls=[]
     for url in plugin.get_setting('javbusfb').lower().split(';'):
         urls.append(url.strip())
-        
-    '''
-    javbusurl['existmag']='all'
-    urls=[]
-    try:
-        javbusfb=plugin.get_setting('javbusfb').lower().split(';')
-        rsp = _http(plugin.get_setting('javbusfb').lower())
-        #xbmc.log(rsp)
-        urlitems=re.compile(r'(http|https)://([a-z0-9\x2E]+)"', re.DOTALL).findall(rsp)
-        urlbase=''
-        rspbase=''
-        
-        for  s, url in enumerate(urlitems):
-            try:
-                urls.append(url[0]+'://'+url[1])
-                #urls.append('http://'+url[1])
-            except:
-                continue
-                
-        if len(urls)<=0:
-            urls.append('https://www.javbus.com')
-
-
-        
-    except:
-        notify('JAVBUS网址查询失败')
-        #return	
-        urls.append('https://www.javbus.com')
-        urls.append('https://www.javbus.info')
-        urls.append('https://www.javbus.us')
-        urls.append('https://www.javbus2.pw')
-        urls.append('https://www.javbus3.pw')
-    '''
     try:
         dialog = xbmcgui.Dialog()
         sel = dialog.select('网址选择', urls)

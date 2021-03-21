@@ -2,11 +2,11 @@
 #VERSION: 1.00
 from  __future__  import unicode_literals
 import json,re
-from commfunc import keyboard,_http,encode_obj
+import xbmc,xbmcgui
+from commfunc import keyboard,_http,encode_obj, get_storage
 from lib.six.moves.urllib import parse
 from traceback import format_exc
-from xbmcswift2 import Plugin
-plugin=Plugin()
+
 class bt2mag(object):
     url = 'https://tellme.pw/btsow'
     name = 'bt2mag'
@@ -17,6 +17,19 @@ class bt2mag(object):
     def __init__(self):
         pass
 
+    def getsearchurl(self):
+        try:
+            magneturls=get_storage('magneturls')
+            pageresult = _http(self.url)
+            match = re.search(r'<strong><a\x20href="(.*?)"', pageresult, re.DOTALL | re.MULTILINE)
+            if match:
+                magneturls[self.name]= match.group(1).rstrip('/')
+            else:
+                magneturls[self.name]= 'https://btsow.cam'
+            magneturls.sync()
+        except:
+            xbmc.log(msg=format_exc(),level=xbmc.LOGERROR)
+            
     def search(self, what, cat='all',sorttype='relevance',page='1'): 
     
         result={}
@@ -26,12 +39,12 @@ class bt2mag(object):
         
         try:
             #searchurl='https://btsow.pw'
-            pageresult = _http(self.url)
-            match = re.search(r'<strong><a\x20href="(.*?)"', pageresult, re.DOTALL | re.MULTILINE)
-            if match:
-                searchurl = match.group(1)
-            
-            
+            # pageresult = _http(self.url)
+            # match = re.search(r'<strong><a\x20href="(.*?)"', pageresult, re.DOTALL | re.MULTILINE)
+            # if match:
+                # searchurl = match.group(1)
+            magneturls=get_storage('magneturls')
+            searchurl=magneturls[self.name]
             searchurl=searchurl+'/search/%s/page/%s'%(parse.quote(what),str(int(page)))
 
             pageresult = _http(searchurl)
@@ -59,7 +72,7 @@ class bt2mag(object):
             if len(result['list'])>0:
                 result['nextpage']=True
         except:
-            plugin.log.error(format_exc())
+            xbmc.log(msg=format_exc(),level=xbmc.LOGERROR)
             return result
         
         result['state']=True

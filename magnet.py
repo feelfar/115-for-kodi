@@ -12,7 +12,7 @@ import lib.six as six
 from xbmcswift2 import ListItem
 plugin = comm.plugin
 IMAGES_PATH = comm.IMAGES_PATH
-from commfunc import keyboard,_http,encode_obj,notify
+from commfunc import keyboard,_http,encode_obj,notify,get_storage
 
 import nova2
 

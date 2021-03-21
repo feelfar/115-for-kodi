@@ -86,15 +86,36 @@ def _http(url, data=None,referer=None,cookie=None):
     return reponse
 
 def url_is_alive(url):
-    req = request.Request(url)
-    req.get_method = lambda : 'HEAD'
     try:
+        req = request.Request(url)
+        req.add_header('User-Agent', 'Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Trident/5.0)')
+        req.get_method = lambda : 'HEAD'
         response = request.urlopen(req)
         return True
     except:
         xbmc.log(msg=format_exc(),level=xbmc.LOGERROR)
         return False
         
+def strOfSize(size):
+    '''
+    auth: wangshengke@kedacom.com ；科达柯大侠
+    递归实现，精确为最大单位值 + 小数点后三位
+    '''
+    def strofsize(integer, remainder, level):
+        if integer >= 1024:
+            remainder = integer % 1024
+            integer //= 1024
+            level += 1
+            return strofsize(integer, remainder, level)
+        else:
+            return integer, remainder, level
+
+    units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB']
+    integer, remainder, level = strofsize(size, 0, 0)
+    if level+1 > len(units):
+        level = -1
+    return ( '{}.{:>03d} {}'.format(integer, remainder, units[level]) )
+
 def encode_obj(in_obj):
     def encode_list(in_list):
         out_list = []

@@ -9,7 +9,7 @@ from traceback import format_exc
 from xbmcswift2 import Plugin
 plugin=Plugin()
 class torrentz2(object):
-    url = 'https://torrentz2.unblockninja.com'
+    url = 'https://torrentz2eu.org'
     name = 'torrentz2'
     support_sort=['relevance','addtime','size','popular'];
     page_result_count=50;

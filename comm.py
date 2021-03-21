@@ -4,7 +4,7 @@ from  __future__  import unicode_literals
 
 import sys
 
-import xbmc,xbmcvfs,json,gzip,time,os
+import xbmc,xbmcvfs,json,gzip,time,os,re
 
 try:
     xbmc.translatePath = xbmcvfs.translatePath
@@ -29,7 +29,7 @@ import six
 from six.moves.urllib import parse
 from six.moves.urllib import request
 from six.moves import http_cookiejar as cookielib
-from commfunc import get_storage
+from commfunc import get_storage,_http,url_is_alive
 
 from xbmcswift2 import Plugin
 plugin = Plugin()
@@ -83,6 +83,20 @@ def colorize_label(label, _class=None, color=None):
 
     return '[COLOR %s]%s[/COLOR]' % (color, label)
 
+def jubt():
+    jubturl='https://jubt.gq/'
+    try:
+        rsp = _http('https://jubt.gitlab.io/home/')
+        for match in re.finditer(r"\x3Ctd\x3E\s*\x3Ca\s+href\x3D[\x22\x27](?P<url>.*?)[\x22\x27]", rsp, re.IGNORECASE | re.DOTALL):
+            if url_is_alive(match.group('url')):
+                jubturl=match.group('url')
+                break
+        return _http(jubturl)
+    except:
+        xbmc.log(msg=format_exc(),level=xbmc.LOGERROR)
+        return ''
+
+    
 @plugin.route('/showpic/<imageurl>')
 def showpic(imageurl):
     xbmc.executebuiltin("ShowPicture(%s)" % (imageurl))
