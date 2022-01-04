@@ -9,7 +9,7 @@ from lib.six.moves.urllib import parse
 from traceback import format_exc
 
 class ciligogo(object):
-    url = 'http://www.btmovi.work'
+    url = 'http://www.btmovi.org'
     name = 'ciligogo'
     support_sort=['relevance','addtime','size','popular']
     page_result_count=10;
@@ -21,18 +21,22 @@ class ciligogo(object):
     def getsearchurl(self):
         try:
             magneturls=get_storage('magneturls')
+            magneturls[self.name]= 'http://www.btmovi.org'
+            magneturls.sync()
+            return
+            
             jubturl='https://jubt.gq/'
             rsp = _http('https://jubt.gitlab.io/home/')
             for match in re.finditer(r"\x3Ctd\x3E\s*\x3Ca\s+href\x3D[\x22\x27](?P<url>.*?)[\x22\x27]", rsp, re.IGNORECASE | re.DOTALL):
                 if url_is_alive(match.group('url')):
                     jubturl=match.group('url')
                     break
-            rsp= _http(jubturl)
-            match = re.search(r"window\x2Eopen\x28[\x22\x27](?P<url>(?:http|https)\x3A[\w\x2E\x2F]*?)[\x22\x27](?:(?!window).)*?strong\x3E磁力蜘蛛\s*\x7C.*?\x3C\x2Fdiv\x3E", rsp, re.IGNORECASE | re.DOTALL)
+            rsp= _http(jubturl+'/cn/index.html')
+            match = re.search(r"window\x2Eopen\x28(?:\x26\x2334\x3B)?(?P<url>(?:http|https)\x3A[\w\x2E\x2F]*?)(?:\x26\x2334\x3B)?\x2C(?:\x26\x2334\x3B)?(?:(?!window).)*?strong\x3E磁力蜘蛛\s*\x7C.*?\x3C\x2Fdiv\x3E", rsp, re.IGNORECASE | re.DOTALL)
             if match:
                 magneturls[self.name] = [match.group('url').strip().rstrip('/')]
             else:
-                magneturls[self.name]= 'http://www.btmovi.work'
+                magneturls[self.name]= 'http://www.btmovi.org'
             magneturls.sync()
         except:
             xbmc.log(msg=format_exc(),level=xbmc.LOGERROR)
@@ -52,7 +56,7 @@ class ciligogo(object):
         searchurl='%s/so/%s_%s_%s.html'%(searchurl,parse.quote(what),str(sorttype),str(int(page)))
         try:
             pageresult = _http(searchurl)
-            rmain=r'\x2Fbt\x2F(?P<magnet>[a-z0-9]{40})\x2Ehtml.*?blank[\x22\x27]\x3E(?P<title>.*?)\x3C\x2Fa\x3E.*?创建时间.*?\x3Cb\x3E(?P<createtime>.*?)\x3C\x2Fb\x3E.*?文件大小.*?\x3E(?P<filesize>.*?)\x3C\x2Fb\x3E'
+            rmain=r'\x2Fbt\x2F(?P<magnet>[a-z0-9]{40})\x2Ehtml.*?[\x22\x27]\x3E(?P<title>.*?)\x3C\x2Fa\x3E.*?创建时间.*?\x3Cb\x3E(?P<createtime>.*?)\x3C\x2Fb\x3E.*?文件大小.*?\x3E(?P<filesize>.*?)\x3C\x2Fb\x3E'
             reobj = re.compile(rmain, re.IGNORECASE | re.DOTALL)
             for match in reobj.finditer(pageresult):
                 

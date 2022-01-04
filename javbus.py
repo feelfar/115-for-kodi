@@ -42,7 +42,7 @@ def javbus():
         {'label': '步兵片片列表', 'path': plugin.url_for('javlist', qbbb='bb',filtertype='0',filterkey='0',page=1)},
         {'label': '步兵优优列表', 'path': plugin.url_for('javstarlist', qbbb='bb',page=1)},
         {'label': '步兵类别筛选', 'path': plugin.url_for('javgernefilter', qbbb='bb')},
-        {'label': '步兵中文片片', 'path': plugin.url_for('javlist', qbbb='bb',filtertype='genre',filterkey='sub',page=1)},		
+        {'label': '步兵中文片片', 'path': plugin.url_for('javlist', qbbb='bb',filtertype='genre',filterkey='sub',page=1)},
         {'label': '好雷屋片片列表', 'path': plugin.url_for('javlist', qbbb='om',filtertype='0',filterkey='0',page=1)},
         {'label': '好雷屋优优列表', 'path': plugin.url_for('javstarlist', qbbb='om',page=1)},
         {'label': '好雷屋类别筛选', 'path': plugin.url_for('javgernefilter', qbbb='om')},
@@ -109,7 +109,6 @@ def getjavbusurl():
         notify('JAVBUS网址更新失败')
         javbusurl['om']=plugin.get_setting('javbusom').lower()
     
-
 @plugin.route('/javmagnet/<qbbb>/<gid>/<uc>')
 def javmagnet(qbbb='qb',gid='0',uc='0'):
     menus=[]
@@ -217,12 +216,12 @@ def javdetail(qbbb='qb',movieno='0',id='0',title='0'):
                     movieid2 = matchmovid2.group('movid2')
         
         menus.append({'label':'封面图',
-              'path': plugin.url_for('showpic', imageurl=match.group('mainimg')),
-              'thumbnail':match.group('mainimg'),})
+              'path': plugin.url_for('showpic', imageurl=parse.urljoin(javbusurl[qbbb],match.group('mainimg'))),
+              'thumbnail':parse.urljoin(javbusurl[qbbb],match.group('mainimg')),})
         comm.moviepoint['group']='javbus'
         comm.moviepoint['title']=title
-        comm.moviepoint['thumbnail']=match.group('mainimg')
-    #notify(movieid+'，'+movieid2)		  
+        comm.moviepoint['thumbnail']=parse.urljoin(javbusurl[qbbb],match.group('mainimg'))
+    #notify(movieid+'，'+movieid2)
     releech='</span>\x20<a\x20href="%s/(?P<filter_type>[a-z]+?)/(?P<filter_key>[0-9a-z]+?)">(?P<filter_name>.*?)</a>'%(javbusurl[qbbb])
     leech = re.compile(releech, re.S)
     for match in leech.finditer(rsp):
@@ -280,7 +279,7 @@ def javdetail(qbbb='qb',movieno='0',id='0',title='0'):
             'Container.update('+plugin.url_for('searchinit',stypes='pan,bt,jav',sstr=six.ensure_binary(match.group('starname')),modify='1',otherargs='{}')+')',))
             
         listitem=ListItem(label='优优:%s'%(match.group('starname')),
-                thumbnail=match.group('starimg'), 
+                thumbnail=parse.urljoin(javbusurl[qbbb],match.group('starimg')), 
                 path= plugin.url_for('javlist', qbbb=qbbb,filtertype='star',filterkey=match.group('starid'),page=1),)
                 
         if len(context_menu_items)>0 and listitem!=None:
@@ -299,8 +298,8 @@ def javdetail(qbbb='qb',movieno='0',id='0',title='0'):
                 if matchmovid:
                     movieid = matchmovid.group('movieid')
         menus.append({'label':'样品图',
-              'path': plugin.url_for('showpic', imageurl=match.group('sampleimg')),
-              'thumbnail':match.group('thumbimg'),})
+              'path': plugin.url_for('showpic', imageurl=parse.urljoin(javbusurl[qbbb],match.group('sampleimg'))),
+              'thumbnail':parse.urljoin(javbusurl[qbbb],match.group('thumbimg')),})
     #notify(movieid2)		  
     if movieid=='' and qbbb=='qb' and movieid2!='':
         cururl='https://javzoo.com'
@@ -345,8 +344,6 @@ def javdetail(qbbb='qb',movieno='0',id='0',title='0'):
               })
     comm.setthumbnail=True
     return menus
-
-
 
 @plugin.route('/freepv/<movieid>')
 def freepv(movieid=''):
@@ -406,8 +403,8 @@ def freepv(movieid=''):
         for mid in [movieid,movieid[0:-5]+movieid[-3:]]:
             id1c=mid[0:1]
             id3c=mid[0:3]
-            for stm in ['_dmb_w','_dm_w','_sm_w','_dmb_s','_dm_s','_sm_s']:
-                videourltemp='http://cc3001.dmm.co.jp/litevideo/freepv/%s/%s/%s/%s%s.mp4'%(id1c,id3c,mid,mid,stm)
+            for stm in ['_mhb_w','_dmb_w','_dmb_s','_dm_w','_dm_s','_sm_w','_sm_s']:
+                videourltemp='https://cc3001.dmm.co.jp/litevideo/freepv/%s/%s/%s/%s%s.mp4'%(id1c,id3c,mid,mid,stm)
                 #xbmc.log(videourltemp)
                 if url_is_alive(videourltemp):
                     videourl=videourltemp
@@ -436,20 +433,21 @@ def javlist(qbbb='qb',filtertype='0',filterkey='0',page=1):
         getjavbusurl()
     if not 'existmag' in javbusurl.raw_dict():
         javbusurl['existmag']='all'
-    filterkey=filterkey.replace(' ','')
-    filterkey=parse.quote(filterkey)
+    if filtertype=='search':
+        if not filterkey or filterkey=='0':
+            filterkey = keyboard()
+            if not filterkey or filterkey=='0':
+                return
+    filterkey_=filterkey.replace(' ','')
+    filterkey_=parse.quote(filterkey_)
     filter=''
     if filtertype!='0':
-        if filterkey!='0':
-            filter='/%s/%s'%(filtertype,filterkey)
-        
+        if filterkey_!='0':
+            filter='/%s/%s'%(filtertype,filterkey_)
         else:
             if filtertype=='search':
-                if not filterkey or filterkey=='0':
-                    filterkey = keyboard()
-                    if not filterkey or filterkey=='0':
-                        return
-                filter='/%s/%s'%(filtertype,filterkey.replace(' ',''))
+
+                filter='/%s/%s'%(filtertype,filterkey_.replace(' ',''))
             else:
                 filter='/'+filtertype
     pagestr=''
@@ -459,8 +457,8 @@ def javlist(qbbb='qb',filtertype='0',filterkey='0',page=1):
         else:
             pagestr='/page/'+str(page)
     url='%s%s%s'%(javbusurl[qbbb],filter,pagestr)
-    if filtertype=='search':
-        url=url+'&type=1'
+    #if filtertype=='search':
+    #    url=url+'&type=1'
     #xbmc.log(url)
     try:
         menus=[]
@@ -484,9 +482,10 @@ def javlist(qbbb='qb',filtertype='0',filterkey='0',page=1):
             context_menu_items=[]
             context_menu_items.append(('搜索'+colorize_label(match.group('id'), color='00FF00'), 
                 'Container.update('+plugin.url_for('searchinit',stypes='pan,bt',sstr=match.group('id'),modify='1',otherargs='{}')+')',))
-            coverimg=match.group('imageurl').replace('thumb','cover').replace('.jpg','_b.jpg')
+            thumbimg=parse.urljoin(javbusurl[qbbb],match.group('imageurl'))
+            coverimg=thumbimg.replace('thumb','cover').replace('.jpg','_b.jpg')
             listitem=ListItem(label='[[COLOR FFFFFF00]%s[/COLOR]]%s(%s)'%(match.group('id'), match.group('title'), match.group('date')),
-                    thumbnail=match.group('imageurl'), path= plugin.url_for('javdetail',qbbb=qbbb, movieno=movieno,id=match.group('id'),
+                    thumbnail=thumbimg, path= plugin.url_for('javdetail',qbbb=qbbb, movieno=movieno,id=match.group('id'),
                     title=six.ensure_binary(match.group('title'))),)
             listitem.set_property("Fanart_Image", coverimg)
             #listitem.set_property("Landscape_Image", match.group('imageurl'))
@@ -516,7 +515,7 @@ def javlist(qbbb='qb',filtertype='0',filterkey='0',page=1):
 def javstarlist(qbbb='qb',page=1):
     filter='/actresses'
     pagestr=''
-    if int(page)>1:		
+    if int(page)>1:
         pagestr='/'+str(page)
     url='%s%s%s'%(javbusurl[qbbb],filter,pagestr)
     try:
@@ -532,7 +531,7 @@ def javstarlist(qbbb='qb',page=1):
                 'Container.update('+plugin.url_for('searchinit',stypes='pan,bt',sstr=six.ensure_binary(match.group('starname')),modify='1',otherargs='{}')+')',))
                 
             listitem=ListItem(label='优优:%s'%(match.group('starname')),
-                    thumbnail=match.group('starimg'), path= plugin.url_for('javlist', qbbb=qbbb,filtertype='star',filterkey=match.group('starid'),page=1),)
+                    thumbnail=parse.urljoin(javbusurl[qbbb],match.group('starimg')), path= plugin.url_for('javlist', qbbb=qbbb,filtertype='star',filterkey=match.group('starid'),page=1),)
                     
             if len(context_menu_items)>0 and listitem!=None:
                 listitem.add_context_menu_items(context_menu_items)
@@ -548,8 +547,53 @@ def javstarlist(qbbb='qb',page=1):
     except:
         notify('女优列表获取失败')
         xbmc.log(msg=format_exc(),level=xbmc.LOGERROR)
-        return
+        return 
+'''
+def javgernefilter(qbbb='qb',filterkey='-'):
+    url=javbusurl[qbbb]+'/genre'
     
+    try:
+        rsp = _http(url)
+        dictgenre={}
+        for match in re.finditer("\x2Fgenre\x2F(?P<genreid>.+?)[\x22\x27]\x3E(?P<genrename>.+?)\x3C\x2Fa\x3E", rsp, re.IGNORECASE | re.DOTALL):
+            dictgenre[match.group('genreid')] = match.group('genrename')
+        filterkeys=filterkey.split('-')
+        if filterkey[len(filterkey)-1]=='-':
+            #if qbbb!='om':
+            releech='<h4>(?P<genregroup>.*?)</h4>.*?"row genre-box">(?P<genres>.*?)</div>'
+            leech = re.compile(releech, re.S)
+            
+            genrelist={}
+            genregrouplist=[]
+            for match in leech.finditer(rsp):
+                genrelist[match.group('genregroup')]= match.group('genres')
+                genregrouplist.append(match.group('genregroup'))
+            
+            dialog = xbmcgui.Dialog()
+            
+            sel = dialog.select('类别模式', genregrouplist)
+            if sel == -1: return
+            genregroup=genregrouplist[sel]
+            genres=genrelist[genregroup]
+            #else:
+            #	genres=rsp
+            releech = 'href="%s/genre/(?P<genreid>.+?)">(?P<genrename>.+?)</a>'%(javbusurl[qbbb])
+            leech = re.compile(releech, re.S)
+            genrestemp=[]
+            for match in leech.finditer(genres):
+                genrestemp.append([match.group('genreid'),match.group('genrename')])
+                # menus.append({'label':match.group('genrename'),
+                      # 'path':plugin.url_for('javlist', qbbb=qbbb,filtertype='genre',filterkey=match.group('genreid'),page=1),
+                      # })
+            sel = dialog.select(genregroup, genregrouplist)
+            menus.insert(0, {'label': '标签:[COLOR FFFF3333]%s[/COLOR]'%(tags),
+                'path': plugin.url_for('dbmovie',tags=six.ensure_binary(tags2),sort=sort,page='0',addtag='1',scorerange=scorerange,year_range=year_range)})
+            return menus
+    except:
+        notify('类型列表获取失败')
+        xbmc.log(msg=format_exc(),level=xbmc.LOGERROR)
+        return
+'''
 @plugin.route('/javgerne/<qbbb>')
 def javgernefilter(qbbb='qb'):
     url=javbusurl[qbbb]+'/genre'
@@ -581,6 +625,8 @@ def javgernefilter(qbbb='qb'):
             menus.append({'label':match.group('genrename'),
                   'path':plugin.url_for('javlist', qbbb=qbbb,filtertype='genre',filterkey=match.group('genreid'),page=1),
                   })
+        menus.insert(0, {'label': '标签:[COLOR FFFF3333]%s[/COLOR]'%(tags),
+            'path': plugin.url_for('dbmovie',tags=six.ensure_binary(tags2),sort=sort,page='0',addtag='1',scorerange=scorerange,year_range=year_range)})
         return menus
     except:
         notify('类型列表获取失败')

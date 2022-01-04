@@ -1005,19 +1005,18 @@ def setting():
 def index():
     #plugin.log.error(xl.notecatelist())
     plugin.log.error(str(xl.notedeleteolds('pickcodeurl')))
-    
+    proxyurl='http://%s'%(str(plugin.get_setting('proxyserver')))
     items = [
         {'label': '网盘文件', 'path': plugin.url_for('getfilelist',cid='0',offset=0,star='0',typefilter=0,searchstr='0',changesort='0'),'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'icon.png') )},
         {'label': '星标列表', 'path': plugin.url_for('getfilelist',cid='0',offset=0,star='1',typefilter=0,searchstr='0',changesort='0'),'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'star.png') )},
         {'label': '离线任务列表', 'path': plugin.url_for('offline_list'),'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'offlinedown.png') )},
-        #{'label': '网盘搜索', 'path': plugin.url_for('search',cid='0',mstr='0',offset=0),'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'disksearch.png') )},
-        {'label': '网盘标签', 'path': plugin.url_for(pantagsearch,otherargs='{}'),'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'tag.png') )},
+        {'label': '网盘标签', 'path': plugin.url_for('pantagsearch',otherargs='{}'),'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'tag.png') )},
         {'label': '搜索', 'path': plugin.url_for('searchinit',stypes='pan,bt,db,jav',sstr='0',modify='0',otherargs='{}'),'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'disksearch.png') )},
         #{'label': '磁力搜索', 'path': plugin.url_for('btsearchother',sstr='0', modify='0'),'thumbnail':xbmc.translatePath(os.path.join( IMAGES_PATH, 'magnet.png'))},
-        {'label': '豆瓣标签', 'path': plugin.url_for('dbmovie',tags='0',sort='U',page='0',addtag='0',scorerange='0',year_range='0'),
-                            'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'douban.png') )},
+        {'label': '豆瓣标签', 'path': plugin.url_for('dbmovie',tags='0',sort='U',page='0',addtag='0',scorerange='0',year_range='0'),'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'douban.png'))},
         #{'label': '豆瓣电影搜索', 'path': plugin.url_for('dbsearch', sstr='0', page=0),'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'moviesearch.png') )},
         {'label': '豆瓣排行榜', 'path': plugin.url_for('dbtops'),'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'topmovies.png') )},
+        {'label': '代理浏览', 'path': plugin.url_for('proxyurl', url=proxyurl),'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'browser.png') )},
         {'label': '扫码登入', 'path': plugin.url_for('login'),'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'scan.png') )},
         {'label': '设置', 'path': plugin.url_for('setting'),'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'setup.png') )},
         #{'label': 'captcha', 'path': plugin.url_for('captcha')},
@@ -2082,6 +2081,10 @@ def offline_list():
             'label': colorize_label('清空完成任务','2'),
             'path': plugin.url_for('delete_offline_list',hashinfo=_hash,warringmsg=six.ensure_binary('是否清空'+str(i)+'个完成任务'))})
     return items
+
+@plugin.route('/proxyurl/<url>')
+def proxyurl(url):
+    comm.shellopenurl(url,samsung=0)
 
 @plugin.route('/shellopen/<pc>/<fname>')
 def shellopen(pc,fname):
