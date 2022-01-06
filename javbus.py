@@ -604,7 +604,7 @@ def javgernefilter(qbbb='qb'):
         
         #if qbbb!='om':
         releech='<h4>(?P<genregroup>.*?)</h4>.*?"row genre-box">(?P<genres>.*?)</div>'
-        leech = re.compile(releech, re.S)
+        leech = re.compile(releech,  re.IGNORECASE | re.DOTALL | re.MULTILINE)
         
         genrelist={}
         genregrouplist=[]
@@ -619,14 +619,13 @@ def javgernefilter(qbbb='qb'):
         genres=genrelist[genregrouplist[sel]]
         #else:
         #	genres=rsp
-        releech = 'href="%s/genre/(?P<genreid>.+?)">(?P<genrename>.+?)</a>'%(javbusurl[qbbb])
-        leech = re.compile(releech, re.S)
+        releech = r'/genre/(?P<genreid>.+?)">(?P<genrename>.+?)</a>'
+        leech = re.compile(releech,  re.IGNORECASE | re.DOTALL | re.MULTILINE)
         for match in leech.finditer(genres):
             menus.append({'label':match.group('genrename'),
                   'path':plugin.url_for('javlist', qbbb=qbbb,filtertype='genre',filterkey=match.group('genreid'),page=1),
                   })
-        menus.insert(0, {'label': '标签:[COLOR FFFF3333]%s[/COLOR]'%(tags),
-            'path': plugin.url_for('dbmovie',tags=six.ensure_binary(tags2),sort=sort,page='0',addtag='1',scorerange=scorerange,year_range=year_range)})
+        
         return menus
     except:
         notify('类型列表获取失败')
