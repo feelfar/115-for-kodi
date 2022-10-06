@@ -25,14 +25,18 @@ javbusurl = plugin.get_storage('javbusurl')
 javbusurl['base']=plugin.get_setting('javbusqb').lower()		
 javbusurl['qb']=plugin.get_setting('javbusqb').lower()
 javbusurl['bb']=plugin.get_setting('javbusqb').lower()+'/uncensored'
-'''
 javbusurl['om']=plugin.get_setting('javbusom').lower()
+'''
+
 
 @plugin.route('/javbus')
 def javbus():
     if not 'base' in javbusurl.raw_dict():
+        javbusurl['base']="http://www.javbus.com"
         getjavbusurl()
-    
+    if not url_is_alive(javbusurl['base']):
+        notify('网址炸了，请到https://1jubt.top 查看最新地址')
+        getjavbusurl()
     #notify(javbusurl['qb'])
     item = [
         {'label': '骑兵片片列表', 'path': plugin.url_for('javlist', qbbb='qb',filtertype='0',filterkey='0',page=1)},
@@ -55,59 +59,22 @@ def javbus():
     
 @plugin.route('/getjavbusurl')
 def getjavbusurl():
+    
     javbusurl['existmag']='all'
+    url=javbusurl['base']
     
-    urls=[]
-    oldurls=plugin.get_setting('javbusfb').lower().split(';')
-    
-    for url in oldurls:
-        if url_is_alive(url): 
-            urls.append(url.strip().rstrip('/'))
-    
-    if len(urls)<=0:
-        rsp=comm.jubt()
-        match = re.search(r"window\x2Eopen\x28[\x22\x27](?P<url>(?:http|https)\x3A[\w\x2E\x2F]*?)[\x22\x27](?:(?!window).)*?strong\x3EJavBus\s*\x7C.*?\x3C\x2Fdiv\x3E", rsp, re.IGNORECASE | re.DOTALL)
-        if match:
-            urls = [match.group('url').strip().rstrip('/')]
-    if len(urls)>0:
-        #notify(urls[0])
-        rsp=_http(urls[0])
-        for match in re.finditer(r"[\x22\x27]nofollow[\x22\x27]\x3E(?P<url>(?:http|https)\x3A[\w\x2E\x2F]*?)\x3C\x2Fa\x3E", rsp, re.IGNORECASE | re.DOTALL):
-            urls.append(match.group('url'))
+    url=keyboard(text=url,title='输入JAVBus地址')
+    url=url.strip().rstrip('/')
+    javbusurl['base']=url
+    javbusurl['qb']=url
+    javbusurl['bb']=url+'/uncensored'
+    if not 'om' in javbusurl.raw_dict():
+        javbusurl['om']='http://www.javbus.red'
+    if url_is_alive(url):
+        rsp=_http(url)
         match = re.search(r"href\x3D[\x22\x27](?P<url>(?:http|https)\x3A[\w\x2E\x2F]*?)[\x22\x27]\x3E歐美", rsp, re.IGNORECASE | re.DOTALL)
         if match:
-            plugin.set_setting('javbusom',match.group('url').strip().rstrip('/'))
-    if len(urls)<=0:
-        notify('JAVBUS网址更新失败！')
-    else:
-        javbusfb=''
-        urls = list(set(urls))
-        for url in urls:
-            javbusfb+=url+';'
-        plugin.set_setting('javbusfb',javbusfb)
-    urls=[]
-    for url in plugin.get_setting('javbusfb').lower().split(';'):
-        urls.append(url.strip())
-    try:
-        dialog = xbmcgui.Dialog()
-        sel = dialog.select('网址选择', urls)
-        if sel == -1: return
-        
-        javbusurl['base']=urls[sel]
-        javbusurl['qb']=urls[sel]
-        javbusurl['bb']=urls[sel]+'/uncensored'
-        javbusurl['om']=plugin.get_setting('javbusom').lower()
-        '''
-        rspbase=_http(javbusurl['base']+'/')
-        match = re.search(r'visible-sm-block.*?href="([0-9a-zA-Z\x2E\x2F\x3A]*?)/">歐美', rspbase, re.DOTALL | re.MULTILINE)
-        if match:
-            javbusurl['om'] = match.group(1)
-            notify('JAVBUS网址更新成功！')
-        '''
-    except:
-        xbmc.log(msg=format_exc(),level=xbmc.LOGERROR)
-        notify('JAVBUS网址更新失败')
-        javbusurl['om']=plugin.get_setting('javbusom').lower()
+            javbusurl['om']=match.group('url').strip().rstrip('/')
     
 @plugin.route('/javmagnet/<qbbb>/<gid>/<uc>')
 def javmagnet(qbbb='qb',gid='0',uc='0'):
@@ -404,7 +371,7 @@ def freepv(movieid=''):
             id1c=mid[0:1]
             id3c=mid[0:3]
             for stm in ['_mhb_w','_dmb_w','_dmb_s','_dm_w','_dm_s','_sm_w','_sm_s']:
-                videourltemp='https://cc3001.dmm.co.jp/litevideo/freepv/%s/%s/%s/%s%s.mp4'%(id1c,id3c,mid,mid,stm)
+                videourltemp='https://cc3001.dmm.co.jp/hlsvideo/freepv/%s/%s/%s/%s%s.m3u8'%(id1c,id3c,mid,mid,stm)
                 #xbmc.log(videourltemp)
                 if url_is_alive(videourltemp):
                     videourl=videourltemp

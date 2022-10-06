@@ -7,7 +7,7 @@
 	 -->
 	<setting id="subtitle" type="bool" label="站内字幕" default="true"/>
 	<setting id="resolution" type="enum" label="清晰度" values="每次提示|普清|高清|超清|1080p|4K|原画|原码" default="0"/>
-	<setting id="playmode" type="enum" label="原码播放方式" values="代理方式（默认）|直连方式（基本已废）" default="0"/>
+	<setting id="playmode" type="enum" label="原码播放方式" values="代理方式（默认）|直连方式" default="0"/>
 	<setting id="proxyserver" type="text" label="播放代理地址" default="127.0.0.1:6227" />
 	<setting id="dbdeftag" type="text" label="豆瓣自定义标签" default="1994,周星驰" />
   </category>
@@ -21,8 +21,6 @@
   </category>    
   <category label="其它设置">
 	<setting id="javbus" type="bool" label="启用Javbus" default="true"/>
-	<setting id="javbusfb" type="text" label="Javbus防屏蔽网址" default="https://www.busdmm.blog;https://www.seedmm.life;https://www.busfan.blog;https://www.busjav.work;"/>
-	<setting id="javbusom" type="text" label="Javbus好雷屋网址" default="https://www.javbus.one"/>
 	<setting id="panedit" type="bool" label="启用网盘删移改功能" default="false"/>
 	<setting id="genm3u8" type="bool" label="批量生成M3U8" default="false"/>
 	

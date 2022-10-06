@@ -1267,8 +1267,7 @@ def getListItem(item,pathname=''):
                     path=plugin.url_for('play',pc=item['pc'],name=six.ensure_binary(item['n']),iso=isiso))
             
             listitem.set_info('video', {'title':item['n'],'size': item['s']})
-            #listitem.as_xbmc_listitem().setContentLookup(False)
-            listitem.set_is_playable('true')
+            listitem.set_is_playable(True)
             context_menu_items.append(('FFMpeg转码下载', 
                 'RunPlugin('+plugin.url_for('ffmpeg',pc=item['pc'],name=six.ensure_binary(item['n']))+')',))
             
@@ -1879,8 +1878,9 @@ def play(pc,name,iso):
                 subFile.write(subdata)
             subFile.close()
 
-    #plugin.set_resolved_url(videourl,six.ensure_text(subpath))
-    plugin.set_resolved_url(videourl)
+    plugin.set_resolved_url(videourl,six.ensure_text(subpath))
+    #plugin.set_resolved_url(videourl,six.ensure_text(suburl))
+    #plugin.set_resolved_url(videourl)
     
     if subpath:
         player = xbmc.Player()
@@ -1892,6 +1892,7 @@ def play(pc,name,iso):
             player.setSubtitles(six.ensure_binary(subpath))
         else:
             player.setSubtitles(six.ensure_text(subpath))
+    
 
 
 @plugin.route('/ffmpeg/<pc>/<name>')
@@ -2329,3 +2330,4 @@ if __name__ == '__main__':
             listmode=comm.ALL_VIEW_CODES['list'][skindir]
             #notify(str(listmode))
             xbmc.executebuiltin('Container.SetViewMode(%d)' % listmode)
+
