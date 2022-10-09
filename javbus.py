@@ -32,7 +32,7 @@ javbusurl['om']=plugin.get_setting('javbusom').lower()
 @plugin.route('/javbus')
 def javbus():
     if not 'base' in javbusurl.raw_dict():
-        javbusurl['base']="http://www.javbus.com"
+        javbusurl['base']="https://www.javbus.com"
         getjavbusurl()
     if not url_is_alive(javbusurl['base']):
         notify('网址炸了，请到https://1jubt.top 查看最新地址')
@@ -59,12 +59,14 @@ def javbus():
     
 @plugin.route('/getjavbusurl')
 def getjavbusurl():
-    
     javbusurl['existmag']='all'
+    if not javbusurl['base'] or javbusurl['base'].isspace():
+        javbusurl['base']="https://www.javbus.com"
     url=javbusurl['base']
-    
-    url=keyboard(text=url,title='输入JAVBus地址')
-    url=url.strip().rstrip('/')
+    urltemp=keyboard(text=url,title='输入JAVBus地址')
+    if not urltemp or urltemp.isspace():
+        return
+    url=urltemp.strip().rstrip('/')
     javbusurl['base']=url
     javbusurl['qb']=url
     javbusurl['bb']=url+'/uncensored'
@@ -309,7 +311,7 @@ def javdetail(qbbb='qb',movieno='0',id='0',title='0'):
               'info_type':'video',
               'info':{'title':six.ensure_text(title)}
               })
-    comm.setthumbnail=True
+    comm.setViewCode='thumbnail'
     return menus
 
 @plugin.route('/freepv/<movieid>')
@@ -470,8 +472,7 @@ def javlist(qbbb='qb',filtertype='0',filterkey='0',page=1):
             menus.append({'label': '下一页',
                         'path':plugin.url_for('javlist', qbbb=qbbb,filtertype=filtertype,filterkey=filterkey,page=int(page)+1),
                         'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'nextpage.png') )})
-        comm.setthumbnail=True
-        plugin.set_content('movies')
+        comm.setViewCode='thumbnail'
         return menus
     except Exception as ex:
         notify('片片列表获取失败'+str(ex))
@@ -509,7 +510,7 @@ def javstarlist(qbbb='qb',page=1):
             menus.append({'label': '下一页',
                         'path':plugin.url_for('javstarlist', qbbb=qbbb,page=int(page)+1),
                         'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'nextpage.png') )})
-        comm.setthumbnail=True
+        comm.setViewCode='thumbnail'
         return menus
     except:
         notify('女优列表获取失败')

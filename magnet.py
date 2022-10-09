@@ -23,7 +23,7 @@ def btsearchInit(sstr='',modify='0'):
         sstr = keyboard(text=sstr)
         if not sstr:
             return
-
+    comm.setViewCode='widelist'
     
     items=[]
     items.append({'label': '编辑搜索关键字[COLOR FF00FFFF]%s[/COLOR]'%(six.ensure_text(sstr)),
@@ -49,6 +49,9 @@ def btsearchInit(sstr='',modify='0'):
     '''
     items.append({'label': '在[COLOR FFFFFF00]%s[/COLOR]搜索[COLOR FF00FFFF]%s[/COLOR]'%('btmovi.org',six.ensure_text(sstr)),
                 'path': plugin.url_for('btsearch',enginestr='002ciligogo',sstr=six.ensure_binary(sstr),sorttype='-1'),
+                'thumbnail':xbmc.translatePath(os.path.join( IMAGES_PATH, 'magnet.png')) })
+    items.append({'label': '在[COLOR FFFFFF00]%s[/COLOR]搜索[COLOR FF00FFFF]%s[/COLOR]'%('雨花阁',six.ensure_text(sstr)),
+                'path': plugin.url_for('btsearch',enginestr='001yuhuage',sstr=six.ensure_binary(sstr),sorttype='-1'),
                 'thumbnail':xbmc.translatePath(os.path.join( IMAGES_PATH, 'magnet.png')) })
     return items
 
@@ -86,6 +89,7 @@ def btsearch(enginestr,sstr,sorttype):
         return
     max=int(plugin.get_setting('btmaxresult'))
     max=(max+1)*20
+    comm.setViewCode='widelist'
     items=[]
     if enginestr!='all' and sorttype=='-1':
         engineinfo=nova2.getengineinfo(enginestr)

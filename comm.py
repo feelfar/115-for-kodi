@@ -33,7 +33,7 @@ from commfunc import get_storage,_http,url_is_alive
 
 from xbmcswift2 import Plugin
 plugin = Plugin()
-setthumbnail=False
+setViewCode='list'
 
 moviepoint={}
 subcache=get_storage('subcache')
@@ -46,11 +46,15 @@ colors = {'dir': 'FF9966','video': 'FF0033','bt': '33FF00', 'audio': '66CCCC', '
 ALL_VIEW_CODES = {
     'list': {
         'skin.confluence': 50, # List
-        'skin.estuary': 55, # List
+        'skin.estuary': 50, # List
         'skin.aeon.nox': 50, # List
         'skin.droid': 50, # List
         'skin.quartz': 50, # List
         'skin.re-touched': 50, # List
+    },
+    'widelist': {
+        'skin.estuary': 55, # WideList
+        'skin.confluence': 51, # BigList
     },
     'thumbnail': {
         'skin.confluence': 500, # Thumbnail

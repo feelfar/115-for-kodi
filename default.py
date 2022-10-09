@@ -3,7 +3,7 @@
 from  __future__  import unicode_literals
 import sys
 
-import os,json,xbmc,xbmcgui,xbmcvfs,gzip,re,time,threading,socket,uuid,base64
+import os,json,xbmc,xbmcplugin,xbmcgui,xbmcvfs,gzip,re,time,threading,socket,uuid,base64
 try:
     xbmc.translatePath = xbmcvfs.translatePath
 except AttributeError:
@@ -48,6 +48,8 @@ import magnet
 import douban
 import javbus
 
+defaultUserAgent='Mozilla/5.0;  Mac  OS  X/10.15.7;  115Desktop/2.0.1.7'
+xbmcplugin.setContent(int(sys.argv[1]),'movies')
 class QRShower(xbmcgui.WindowDialog):
     def __init__(self):
         # width=self.getWidth() 
@@ -98,8 +100,7 @@ class api_115(object):
         else:
             self.opener = None
         self.headers = {
-            #'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.109 Safari/537.36',
-            'User-Agent': 'Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2; Trident/6.0)',
+            'User-Agent': defaultUserAgent,
             'Accept-encoding': 'gzip,deflate',
         }
        
@@ -703,7 +704,7 @@ class api_115(object):
             #return result+'&'+cookies
             headers=self.headers.copy()
             headers.update({'Cookie':cookies})
-            headers.update({'User-Agent':'Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2; Trident/6.0)'})
+            headers.update({'User-Agent':defaultUserAgent})
             headers.update({'Referer': 'https://115.com/?cid=0&offset=0&mode=wangpan'})
             result=result+'|'+parse.urlencode(headers)
         #plugin.log.error(result)
@@ -1029,7 +1030,7 @@ def index():
     if str(plugin.get_setting('javbus'))=='true':
         items.insert(7, {'label': 'javbus', 'path': plugin.url_for('javbus'),'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'javbus.png') )})
     sortasc=str(plugin.get_setting('sortasc'))
-    comm.setthumbnail=True
+    comm.setViewCode='thumbnail'
     return items
 
 @plugin.route('/btsearchother')
@@ -1201,7 +1202,7 @@ def searchinit(stypes,sstr,modify,otherargs):
         if len(comm.searchvalues['strlist'])>0:
             items.append({'label': colorize_label('清空搜索关键字', color='FF0000'), 'path': plugin.url_for('searchinit',stypes=stypes,sstr='0',modify='3',otherargs=otherargs)})
         comm.searchvalues.sync()
-        comm.setthumbnail=False
+        comm.setViewCode='list'
         return items
 
 @plugin.route('/pansearch/<cid>/<mstr>/<offset>')
@@ -1234,11 +1235,9 @@ def pansearch(cid,mstr,offset):
             items.append({'label': colorize_label('下一页', 'next'),
                 'path': plugin.url_for('pansearch',cid=cid,mstr=mstr,offset=str(int(offset)+int(pageitem))),
                 'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'nextpage.png') )})
-        #plugin.set_content('movies')
-        
         if imagecount >= 10 and imagecount * 2 > len(items):
-            #plugin.set_content('images')
-            comm.setthumbnail=True
+            
+            comm.setViewCode='thumbnail'
         return items
     else:
         notify(msg='数据获取失败,错误信息:'+six.ensure_text(data['error']))
@@ -1653,11 +1652,9 @@ def getfilelist(cid,offset,star,typefilter='0',searchstr='0',changesort='0'):
                 'path': plugin.url_for('getfilelist',cid=cid,offset=str(int(offset)+int(pageitem)),
                                         star=star,typefilter=typefilter,searchstr=six.ensure_binary(searchstr),changesort='0'),
                 'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'nextpage.png') )})
-        #plugin.set_content('movies')
+        comm.setViewCode='list'
         if imagecount >= 10 and imagecount * 2 > len(items):
-            #plugin.set_content('images')
-            comm.setthumbnail=True
-        #notify(str(comm.subcache.raw_dict()))
+            comm.setViewCode='thumbnail'
         return items
     else:
         notify(msg='数据获取失败,错误信息:'+six.ensure_text(data['error']))
@@ -1878,23 +1875,19 @@ def play(pc,name,iso):
                 subFile.write(subdata)
             subFile.close()
 
-    plugin.set_resolved_url(videourl,six.ensure_text(subpath))
+    #plugin.set_resolved_url(videourl,six.ensure_text(subpath))
     #plugin.set_resolved_url(videourl,six.ensure_text(suburl))
     #plugin.set_resolved_url(videourl)
+    play_item = plugin._listitemify({'path': videourl})
+    play_item.set_played(True)
     
+    #play_item.setPath(videourl)
     if subpath:
-        player = xbmc.Player()
-        for _ in range(30):
-            if player.isPlaying():
-                break
-            time.sleep(1)
-        if six.PY2:
-            player.setSubtitles(six.ensure_binary(subpath))
-        else:
-            player.setSubtitles(six.ensure_text(subpath))
+        play_item.as_xbmc_listitem().setSubtitles([six.ensure_text(subpath)])
+    xbmcplugin.setResolvedUrl(int(sys.argv[1]), True,
+                                  play_item.as_xbmc_listitem())
+    return [play_item]
     
-
-
 @plugin.route('/ffmpeg/<pc>/<name>')
 def ffmpeg(pc,name):
     data=getfiledata(pc)
@@ -2315,19 +2308,13 @@ def execmagnet(url,title='',msg=''):
         info_hash=offline(url)
         
 if __name__ == '__main__':
+    
     # Override default handler
-    #comm.setthumbnail=False
     plugin.run()
     skindir=xbmc.getSkinDir()
-    
-    if comm.setthumbnail:
-        if skindir in comm.ALL_VIEW_CODES['thumbnail']:
-            thumbmode=comm.ALL_VIEW_CODES['thumbnail'][skindir]
-            #notify(str(thumbmode))
-            xbmc.executebuiltin('Container.SetViewMode(%d)' % thumbmode)
-    else:
-        if skindir in comm.ALL_VIEW_CODES['list']:
-            listmode=comm.ALL_VIEW_CODES['list'][skindir]
-            #notify(str(listmode))
-            xbmc.executebuiltin('Container.SetViewMode(%d)' % listmode)
 
+    if skindir in comm.ALL_VIEW_CODES[comm.setViewCode]:
+        viewmode=comm.ALL_VIEW_CODES[comm.setViewCode][skindir]
+        #notify(str(viewmode))
+        xbmc.executebuiltin('Container.SetViewMode(%d)' % viewmode)
+    
