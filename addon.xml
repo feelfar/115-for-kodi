@@ -5,7 +5,7 @@ version="0.3.2.2"
 provider-name="yxblog, 2020-12 modify by feelfar">
 
 <requires>
-	<import addon="script.module.xbmcswift2" version="19.0.7" optional="false"/>
+	<import addon="script.module.xbmcswift2" version="13.0.2" optional="false"/>
 	<import addon="script.module.pycryptodome" version="3.4.3" optional="false"/>
 </requires>
 <extension point="xbmc.python.pluginsource" library="default.py">
