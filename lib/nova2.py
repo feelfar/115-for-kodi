@@ -185,7 +185,7 @@ def search(searchengine,what,sort,maxresult=20):
     queueResult=Queue.Queue()
     
     workers = []
-    for i in range(40):
+    for i in range(10):
         worker=workerSearch(tasklist,queueResult)
         workers.append(worker)
         

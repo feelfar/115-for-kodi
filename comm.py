@@ -29,15 +29,15 @@ import six
 from six.moves.urllib import parse
 from six.moves.urllib import request
 from six.moves import http_cookiejar as cookielib
-from commfunc import get_storage,_http,url_is_alive
+from commfunc import _http,url_is_alive
 
 from xbmcswift2 import Plugin
 plugin = Plugin()
 setViewCode='list'
 
 moviepoint={}
-subcache=get_storage('subcache')
-searchvalues=get_storage('searchvalues')
+subcache=plugin.get_storage('subcache')
+searchvalues=plugin.get_storage('searchvalues')
 
 colors = {'dir': 'FF9966','video': 'FF0033','bt': '33FF00', 'audio': '66CCCC', 'subtitle':'505050', 'image': '99CC33',
         'back': '0099CC','next':'CCCCFF', 'menu':'CCFF66', 'star1':'FFFF00','star0':'777777','sort':'666699','filter':'0099CC',

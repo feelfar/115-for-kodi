@@ -12,7 +12,7 @@ import lib.six as six
 from xbmcswift2 import ListItem
 plugin = comm.plugin
 IMAGES_PATH = comm.IMAGES_PATH
-from commfunc import keyboard,_http,encode_obj,notify,get_storage
+from commfunc import keyboard,_http,encode_obj,notify
 
 import nova2
 
@@ -46,13 +46,16 @@ def btsearchInit(sstr='',modify='0'):
         items.append({'label': '在[COLOR FFFFFF00]%s[/COLOR]搜索[COLOR FF00FFFF]%s[/COLOR]'%(btengine,six.ensure_text(sstr)),
                 'path': plugin.url_for('btsearch',enginestr=btengine,sstr=six.ensure_binary(sstr),sorttype='-1'),
                 'thumbnail':xbmc.translatePath(os.path.join( IMAGES_PATH, 'magnet.png')) })
-    '''
+                '''
     items.append({'label': '在[COLOR FFFFFF00]%s[/COLOR]搜索[COLOR FF00FFFF]%s[/COLOR]'%('btmovi.org',six.ensure_text(sstr)),
                 'path': plugin.url_for('btsearch',enginestr='002ciligogo',sstr=six.ensure_binary(sstr),sorttype='-1'),
                 'thumbnail':xbmc.translatePath(os.path.join( IMAGES_PATH, 'magnet.png')) })
     items.append({'label': '在[COLOR FFFFFF00]%s[/COLOR]搜索[COLOR FF00FFFF]%s[/COLOR]'%('雨花阁',six.ensure_text(sstr)),
                 'path': plugin.url_for('btsearch',enginestr='001yuhuage',sstr=six.ensure_binary(sstr),sorttype='-1'),
                 'thumbnail':xbmc.translatePath(os.path.join( IMAGES_PATH, 'magnet.png')) })
+                
+
+    
     return items
 
 def anySizeToBytes(size_string):
@@ -111,6 +114,7 @@ def btsearch(enginestr,sstr,sorttype):
 
     for res_dict in result:
         title='[COLOR FF00FFFF]'+res_dict['size']+'[/COLOR]'+'[COLOR FFCCFFCC]'+res_dict['date'][:10]+'[/COLOR]'+res_dict['name']
+        #xbmc.log(msg=res_dict['date'],level=xbmc.LOGERROR)
         filemsg ='大小：'+res_dict['size']+'  创建时间：'+res_dict['date']
         listitem=ListItem(label=comm.colorize_label(title, 'bt'), 
             label2=res_dict['size'], icon=None, thumbnail=None, 

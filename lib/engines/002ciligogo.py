@@ -2,11 +2,18 @@
 #VERSION: 1.00
 
 from  __future__  import unicode_literals
+import sys 
+sys.path.append("..")
 import json,re
 import xbmc,xbmcgui
-from commfunc import keyboard,_http,encode_obj, get_storage,url_is_alive
-from lib.six.moves.urllib import parse
+from commfunc import keyboard,_http,encode_obj,url_is_alive
+
 from traceback import format_exc
+import comm
+import lib.six as six
+from lib.six.moves import html_parser
+from lib.six.moves.urllib import parse
+plugin = comm.plugin
 
 class ciligogo(object):
     url = 'http://www.btmovi.org'
@@ -20,7 +27,7 @@ class ciligogo(object):
         
     def getsearchurl(self):
         try:
-            magneturls=get_storage('magneturls')
+            magneturls=plugin.get_storage('magneturls')
             magneturls[self.name]= 'http://www.btmovi.org'
             magneturls.sync()
             return
@@ -51,7 +58,7 @@ class ciligogo(object):
         elif sorttype=='size': sorttype='size'
         elif sorttype=='relevance': sorttype='rel'
         else : sorttype='hits'
-        magneturls=get_storage('magneturls')
+        magneturls=plugin.get_storage('magneturls')
         searchurl=magneturls[self.name]
         searchurl='%s/so/%s_%s_%s.html'%(searchurl,parse.quote(what),str(sorttype),str(int(page)))
         try:
@@ -60,9 +67,9 @@ class ciligogo(object):
             reobj = re.compile(rmain, re.IGNORECASE | re.DOTALL)
             for match in reobj.finditer(pageresult):
                 
-                title=match.group('title').replace('<em>','').replace('</em>','')
-                filesize=match.group('filesize')
-                createtime=match.group('createtime')
+                title=match.group('title').replace('<em>','').replace('</em>','').strip()
+                filesize=match.group('filesize').strip()
+                createtime=match.group('createtime').strip()
                 
                 magnet=r'magnet:?xt=urn:btih:'+match.group('magnet')
                 

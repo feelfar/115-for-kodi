@@ -2,11 +2,18 @@
 #VERSION: 1.00
 
 from  __future__  import unicode_literals
+import sys 
+sys.path.append("..")
 import json,re
 import xbmc,xbmcgui
-from commfunc import keyboard,_http,encode_obj, get_storage,url_is_alive
-from lib.six.moves.urllib import parse
+from commfunc import keyboard,_http,encode_obj,url_is_alive
+
 from traceback import format_exc
+import comm
+import lib.six as six
+from lib.six.moves import html_parser
+from lib.six.moves.urllib import parse
+plugin = comm.plugin
 
 class yuhuage(object):
     
@@ -19,7 +26,7 @@ class yuhuage(object):
         pass
         
     def getsearchurl(self):
-        magneturls=get_storage('magneturls')
+        magneturls=plugin.get_storage('magneturls')
         magneturls[self.name] = ''
         magneturls.sync()
         try:
@@ -53,7 +60,7 @@ class yuhuage(object):
         
         
     def search(self, what, cat='all',sorttype='relevance',page='1'):
-        magneturls=get_storage('magneturls')
+        magneturls=plugin.get_storage('magneturls')
         url=magneturls[self.name]
         if not url:
             return
@@ -87,12 +94,13 @@ class yuhuage(object):
                     magnet = ""
                     
                 title=match.group('title').replace('<b>','').replace('</b>','')
-                title = re.sub("\x3cspan.*?\x3c\x2Fspan\x3e", "", title, 0, re.IGNORECASE | re.DOTALL)
-                filesize=match.group('filesize')
-                createtime=match.group('createtime')
-                filecount=match.group('filecount')
+                title = re.sub("\x3cspan.*?\x3c\x2Fspan\x3e", "", title, 0, re.IGNORECASE | re.DOTALL).strip()
+                filesize=match.group('filesize').strip()
+                createtime=match.group('createtime').strip()
+                filecount=match.group('filecount').strip()
 
                 res_dict = dict()
+                '''
                 res_dict['name'] = title
                 res_dict['size'] = filesize
                 res_dict['filecount'] = filecount
@@ -102,6 +110,16 @@ class yuhuage(object):
                 res_dict['date'] =createtime
                 res_dict['desc_link'] = ''
                 res_dict['engine_url'] = url
+                '''
+                res_dict['name'] = title
+                res_dict['size'] = filesize
+                res_dict['filecount'] = filecount
+                res_dict['seeds'] = ''
+                res_dict['leech'] = ''
+                res_dict['link'] = magnet
+                res_dict['date'] = createtime
+                res_dict['desc_link'] = ''
+                res_dict['engine_url'] = ''
                 result['list'].append(res_dict)
             if pageresult.find('&raquo;')>=0:
                 result['nextpage']=True

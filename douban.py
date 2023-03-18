@@ -452,8 +452,22 @@ def dbsearch(sstr, page=0):
             return
     try:
         sstr = re.sub(r'\s+','',sstr)
-        url = 'https://www.douban.com/j/search?'+parse.urlencode(encode_obj({'q':sstr,'start':int(page)*20,'cat':1002}))
+        #url = 'https://movie.douban.com/j/search_subjects?'+parse.urlencode(encode_obj({'tag':sstr,'page_start':int(page)*20,'cat':1002}))
+        url = 'https://www.dianyinggou.com/so/%s/page_%d.html'%(parse.quote_plus(sstr),page+1)
+        xbmc.log(msg=url,level=xbmc.LOGERROR)
         rsp = _http(url)
+        menus =[]
+        rtxt = r'title\x3D[\x22\x27](?P<title>.*?)[\x22\x27].*?\x2Fmov\x2F(?P<dbsubject>.*?)\x2ehtml.*?data\x2Durl\x3D[\x22\x27](?P<img>.*?)[\x22\x27].*?percentW\x3D[\x22\x27](?P<rat>.*?)[\x22\x27]'
+        for m in re.finditer(rtxt, rsp, re.DOTALL):
+            title=m.group('title')
+            rat= float(m.group('rat'))*10
+            menus.append({'label': '%s[[COLOR FFFF3333]%s[/COLOR]]'%(title,rat),
+                        'path': plugin.url_for('dbsubject', subject=m.group('dbsubject')),
+                        'thumbnail': m.group('img'),
+                        'context_menu':[('搜索'+colorize_label(title, color='00FF00'), 
+                            'Container.update('+plugin.url_for('searchinit',stypes='pan,bt',sstr=six.ensure_binary(m.group(2)),modify='1',otherargs='{}')+')',)],
+                        })
+        '''
         minfo = json.loads(rsp[rsp.index('{'):])
         menus =[]
         if 'items' in minfo:
@@ -478,12 +492,17 @@ def dbsearch(sstr, page=0):
                         })
                 else:
                     plugin.log.error(item)
+    '''
     except:
         xbmc.log(msg=format_exc(),level=xbmc.LOGERROR)
         return
     #try:
-    if 'more' in minfo:
-        if minfo['more']:
+    
+    rtxt = r'(?P<lastpage>[0-9]+)\x2ehtml[\x22\x27]\x3E末页\x3C'
+    match = re.search(rtxt, rsp, re.IGNORECASE | re.DOTALL)
+    if match:
+        lastpage =int(match.group('lastpage'))
+        if page<lastpage:
             menus.append({
                 'label': '下一页',
                 'path': plugin.url_for('dbsearch', sstr=six.ensure_binary(sstr), page=str(int(page)+1)),
@@ -531,7 +550,7 @@ def dbactor(sstr,sort='time',page=0):
         url = 'https://movie.douban.com/celebrity/%s/' % (sstr)
         rsp = _http(url)
         celename=celeinfo=celeimg=summary=''
-        m = re.search(r"\x22nbg\x22\s+title\x3D\x22(?P<celename>.*?)\x22\s+href\x3D\x22(?P<celeimg>.*?)\x22", rsp, re.DOTALL)
+        m = re.search(r"\x22nbg\x22\s+title\x3D\x22(?P<celename>.*?)\x22.*?src\x3D\x22(?P<celeimg>.*?)\x22", rsp, re.DOTALL)
         if m:
             celename = m.group("celename")
             celeimg= m.group("celeimg")
