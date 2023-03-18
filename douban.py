@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # douban.py
 from  __future__  import unicode_literals
-import xbmc,xbmcgui,xbmcvfs,os,sys,re,time,json
+import xbmc,xbmcgui,xbmcvfs,os,sys,re,time,json,html
 try:
     xbmc.translatePath = xbmcvfs.translatePath
 except AttributeError:
@@ -9,7 +9,7 @@ except AttributeError:
 from traceback import format_exc
 import comm
 import lib.six as six
-from html.parser import HTMLParser
+
 from lib.six.moves.urllib import parse
 plugin = comm.plugin
 __cwd__=comm.__cwd__
@@ -69,7 +69,7 @@ def dbclips(subject):
     menus=[]
     for clip in re.finditer(rtxt, rsp, re.DOTALL):
         #plugin.log.error(clip.group('thumb'))
-        movtitle=HTMLParser().unescape(clip.group('movtitle'))
+        movtitle=html.unescape(clip.group('movtitle'))
         menus.append({'label':movtitle,
                 'path': plugin.url_for('dbplaytrailer',movid=clip.group('movid')),
                 'thumbnail': clip.group('thumb'),
@@ -98,7 +98,7 @@ def dbphotos(subject,pictype='S',page=0):
         resource_url=''
         limg=photo.group('imgurl')
         limg=limg.replace('/m/','/l/')
-        imgname=HTMLParser().unescape(photo.group('imgname').strip())
+        imgname=html.unescape(photo.group('imgname').strip())
         menus.append({'label':imgname,
                 'path': plugin.url_for('showpic', imageurl=limg),
                 #'path':limg,
@@ -143,7 +143,7 @@ def dbsubject(subject):
         
         if m:
             year=m.group('year').strip(')(')
-            title2=HTMLParser().unescape(m.group('title'))
+            title2=html.unescape(m.group('title'))
             title2=title2.replace(title,'').strip()
             thumb=m.group('thumb')
             
@@ -172,7 +172,7 @@ def dbsubject(subject):
                     areas.append(area.strip())
             m = re.search(r'又名.*?span\x3E\s*(?P<strs>.*?)\x3Cbr', info, re.DOTALL)
             if m:
-                strs = HTMLParser().unescape(m.group('strs'))
+                strs = html.unescape(m.group('strs'))
                 for othtitle in strs.split('/'):
                     names.append(othtitle.strip())
         celes=[]
@@ -523,7 +523,7 @@ def celephotos(cele,page=0):
         resource_url=''
         limg=photo.group('imgurl')
         limg=limg.replace('/m/','/l/')
-        imgname=HTMLParser().unescape(photo.group('imgname').strip())
+        imgname=html.unescape(photo.group('imgname').strip())
         menus.append({'label':imgname,
                 'path': plugin.url_for('showpic', imageurl=limg),
                 #'path':limg,
