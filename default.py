@@ -655,7 +655,6 @@ class api_115(object):
     def getfiledownloadurl(self,pc,changeserver='',withcookie=False):
         result = ''
         data=self.urlopen("https://webapi.115.com/files/download?pickcode="+pc+"&_="+str(int(time.time())))
-            
         data= self.jsonload(data)
         if data['state']:
             result=data['file_url']
@@ -685,80 +684,31 @@ class api_115(object):
             jsondata = json.loads(bdecode.decode())
             jsondata=jsondata[list(jsondata.keys())[0]]
             #plugin.log.error(type(jsondata))
-        
+            
             if 'url' in jsondata:
                 result = jsondata['url']['url']
-                self.notesavecontent(cname='pickcodeurl',notetitle=pc,content=result)
-        if withcookie:
-            cookies=''
-            try:
-                for cookie in self.cookiejar:
-                    if cookie.domain.find('115.')>=0:
-                        cookies+=str(cookie.name)+'='+str(cookie.value)+';'
-                cookies+=self.downcookie+';'
-            except Exception as e:
-                xbmc.log(msg=format_exc(),level=xbmc.LOGERROR)
-                plugin.log.error('zzzdebug:%s'%e)
-                os.remove(cookiefile)
-            #return result+'|Cookie='+cookies
-            #return result+'&'+cookies
-            headers=self.headers.copy()
-            headers.update({'Cookie':cookies})
-            headers.update({'User-Agent':defaultUserAgent})
-            headers.update({'Referer': 'https://115.com/?cid=0&offset=0&mode=wangpan'})
-            result=result+'|'+parse.urlencode(headers)
-        #plugin.log.error(result)
-        return result
-    
-    def oldgetfiledownloadurl(self,pc,changeserver='',withcookie=False):
-        result = ''
-        data=self.urlopen("https://webapi.115.com/files/download?pickcode="+pc+"&_="+str(int(time.time())))
-        if 'Set-Cookie' in data.headers:
-            downcookies = re.findall(r"[0-9abcdef]{20,}\s*\x3D\s*[0-9abcdef]{20,}", data.headers['Set-Cookie'], re.DOTALL | re.MULTILINE)
-            '''
-            downcookies=data.headers['Set-Cookie'].split(',')
-            '''
-            self.downcookie=''
-            for downcook in downcookies:
-                self.downcookie+=downcook
+                
             
-        data= self.jsonload(data)
-        if data['state']:
-            result=data['file_url']
-        if not result:
-            data=self.urlopen("http://proapi.115.com/app/chrome/down?method=get_file_url&pickcode="+pc)
-            data= self.jsonload(data)
-            if data['state']:
-                for value in data['data'].values():
-                    if 'url' in value:
-                        result = value['url']['url']
-                        break
-        if not result:
-            return ''
-        #if result.find('down_group')>0:
-            #changeserver=False
-        if changeserver!='' and changeserver!='0':
-            result = re.sub('(http://)(.*115.com)(.*)', r'\1'+changeserver+r'\3', result)
-        
-        #if result.find('down_group')>0:
-            #return result
-        
-        if withcookie:
-            cookies=''
-            try:
-                for cookie in self.cookiejar:
-                    if cookie.domain.find('115.')>=0:
-                        cookies+=str(cookie.name)+'='+str(cookie.value)+';'
-                #cookies=parse.quote_plus(cookies)
-            except:
-                xbmc.log(msg=format_exc(),level=xbmc.LOGERROR)
-                os.remove(cookiefile)
-            #return result+'|Cookie='+cookies
-            #return result+'&'+cookies
-            headers=self.headers.copy()
-            headers.update({'Cookie':cookies})
-            result=result+'|'+parse.urlencode(headers)
-        
+        #if withcookie:
+                cookies=''
+                try:
+                    for cookie in self.cookiejar:
+                        if cookie.domain.find('115.')>=0:
+                            cookies+=str(cookie.name)+'='+str(cookie.value)+';'
+                    cookies+=self.downcookie+';'
+                except Exception as e:
+                    xbmc.log(msg=format_exc(),level=xbmc.LOGERROR)
+                    plugin.log.error('zzzdebug:%s'%e)
+                    os.remove(cookiefile)
+                #return result+'|Cookie='+cookies
+                #return result+'&'+cookies
+                headers=self.headers.copy()
+                headers.update({'Cookie':cookies})
+                headers.update({'User-Agent':defaultUserAgent})
+                headers.update({'Referer': 'https://115.com/?cid=0&offset=0&mode=wangpan'})
+                result=result+'|'+parse.urlencode(headers)
+                self.notesavecontent(cname='pickcodeurl',notetitle=pc,content=result)
+        #plugin.log.error(result)
         return result
         
     def fetch(self,wstream):

@@ -453,14 +453,16 @@ def dbsearch(sstr, page=0):
     try:
         sstr = re.sub(r'\s+','',sstr)
         #url = 'https://movie.douban.com/j/search_subjects?'+parse.urlencode(encode_obj({'tag':sstr,'page_start':int(page)*20,'cat':1002}))
-        url = 'https://www.dianyinggou.com/so/%s/page_%d.html'%(parse.quote_plus(sstr),page+1)
+        url = 'https://www.dianyinggou.com/so/%s/page_%d.html'%(parse.quote_plus(sstr),int(page)+1)
         xbmc.log(msg=url,level=xbmc.LOGERROR)
         rsp = _http(url)
         menus =[]
-        rtxt = r'title\x3D[\x22\x27](?P<title>.*?)[\x22\x27].*?\x2Fmov\x2F(?P<dbsubject>.*?)\x2ehtml.*?data\x2Durl\x3D[\x22\x27](?P<img>.*?)[\x22\x27].*?percentW\x3D[\x22\x27](?P<rat>.*?)[\x22\x27]'
+        rtxt = r'title\x3D[\x22\x27](?P<title>.*?)[\x22\x27].*?\x2Fmov\x2F(?P<dbsubject>.*?)\x2ehtml.*?data\x2Durl\x3D[\x22\x27](?P<img>.*?)[\x22\x27].*?(?:暂无评分|percentW\x3D[\x22\x27](?P<rat>.*?)[\x22\x27])'
         for m in re.finditer(rtxt, rsp, re.DOTALL):
             title=m.group('title')
-            rat= float(m.group('rat'))*10
+            rat='无评分'
+            if m.group('rat'):
+                rat='%.1f' % (float(m.group('rat'))*10)
             menus.append({'label': '%s[[COLOR FFFF3333]%s[/COLOR]]'%(title,rat),
                         'path': plugin.url_for('dbsubject', subject=m.group('dbsubject')),
                         'thumbnail': m.group('img'),
@@ -498,16 +500,19 @@ def dbsearch(sstr, page=0):
         return
     #try:
     
-    rtxt = r'(?P<lastpage>[0-9]+)\x2ehtml[\x22\x27]\x3E末页\x3C'
-    match = re.search(rtxt, rsp, re.IGNORECASE | re.DOTALL)
-    if match:
-        lastpage =int(match.group('lastpage'))
-        if page<lastpage:
-            menus.append({
-                'label': '下一页',
-                'path': plugin.url_for('dbsearch', sstr=six.ensure_binary(sstr), page=str(int(page)+1)),
-                'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'nextpage.png') ),
-                })
+    rtxt = r'page\x5F(?P<lastpage>[0-9]+)\x2Ehtml'
+    lastpage=0
+    for m in re.finditer(rtxt, rsp, re.IGNORECASE |re.DOTALL):
+        lastpagetemp=int(m.group('lastpage'))
+        if lastpagetemp>lastpage:
+            lastpage=lastpagetemp
+    
+    if int(page)+1<lastpage:
+        menus.append({
+            'label': '下一页',
+            'path': plugin.url_for('dbsearch', sstr=six.ensure_binary(sstr), page=int(page)+1),
+            'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'nextpage.png') ),
+            })
     #except: pass
     comm.setViewCode='thumbnail'
     return menus
