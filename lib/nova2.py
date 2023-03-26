@@ -43,7 +43,6 @@ except ImportError:
 from os import path
 from glob import glob
 from sys import argv
-import six
 ################################################################################
 # Every engine should have a "search" method taking
 # a space-free string as parameter (ex. "family+guy")
@@ -116,7 +115,6 @@ class workerSearch(threading.Thread):
         while not self.thread_stop:
             try:
                 task=self.queue.get_nowait()#接收消息
-                #xbmc.log('startsearch '+six.ensure_text(task['engine'].name)+' '+six.ensure_text(task['what'])+' '+six.ensure_text(str(task['page'])))
             except Queue.Empty:
                 self.thread_stop=True
                 break
@@ -206,10 +204,13 @@ def search(searchengine,what,sort,maxresult=20):
     for worker in workers:
         worker.join()
 
+   
     resultlist={}
     while not queueResult.empty():
         res_dict=queueResult.get_nowait()
+        xbmc.log(msg="rhash:"+str(res_dict['link']),level=xbmc.LOGERROR)
         rhash=getmagnethash(res_dict['link'])
+        
         if not rhash in resultlist:
             resultlist[rhash]=res_dict
         queueResult.task_done()

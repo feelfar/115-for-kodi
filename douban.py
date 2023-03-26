@@ -8,9 +8,8 @@ except AttributeError:
     pass
 from traceback import format_exc
 import comm
-import lib.six as six
 
-from lib.six.moves.urllib import parse
+from urllib import parse
 plugin = comm.plugin
 __cwd__=comm.__cwd__
 __resource__ =comm.__resource__
@@ -193,7 +192,7 @@ def dbsubject(subject):
         comm.moviepoint['thumbnail']=thumb
 
         menus.append({'label':'[COLOR FFFF2222]简介：[/COLOR]%s'%summary,
-                    'path':  plugin.url_for('dbsummary', summary=six.ensure_binary(summary)),
+                    'path':  plugin.url_for('dbsummary', summary=comm.ensure_binary(summary)),
                     'thumbnail':thumb})
 
         menus.append({'label':comm.colorize_label('预告片',None,color='32FF94') ,
@@ -219,23 +218,23 @@ def dbsubject(subject):
             '''
             context_menu_items=[]
             context_menu_items.append(('搜索'+colorize_label(sstr, color='00FF00'), 
-                'Container.update('+plugin.url_for('searchinit',stypes='pan,bt',sstr=six.ensure_binary(sstr),modify='1',otherargs='{}')+')',))
-            listitem=ListItem(label='BT:[COLOR FF00FFFF]%s[/COLOR]' % (six.ensure_text(sstr)),
+                'Container.update('+plugin.url_for('searchinit',stypes='pan,bt',sstr=comm.ensure_binary(sstr),modify='1',otherargs='{}')+')',))
+            listitem=ListItem(label='BT:[COLOR FF00FFFF]%s[/COLOR]' % (comm.ensure_text(sstr)),
                 label2=None, icon=None,
                 thumbnail=xbmc.translatePath( os.path.join( IMAGES_PATH, 'magnet.png') ),
-                path=plugin.url_for('btsearchInit', sstr=six.ensure_binary(sstr), modify='0',ext=comm.moviepoint))
+                path=plugin.url_for('btsearchInit', sstr=comm.ensure_binary(sstr), modify='0',ext=comm.moviepoint))
             if len(context_menu_items)>0 and listitem!=None:
                 listitem.add_context_menu_items(context_menu_items)
                 menus.append(listitem)
             '''
-            sstr = six.ensure_text(sstr).replace('第一季','s01').replace('第二季','s02').replace('第三季','s03').replace('第四季','s04').replace('第五季','s05')\
+            sstr = comm.ensure_text(sstr).replace('第一季','s01').replace('第二季','s02').replace('第三季','s03').replace('第四季','s04').replace('第五季','s05')\
                 .replace('第六季','s06').replace('第七季','s07').replace('第八季','s08').replace('第九季','s09').replace('第十季','s10')\
                 .replace('第十一季','s11').replace('第十二季','s12').replace('第十三季','s13').replace('第十四季','s14').replace('第十五季','s15')\
                 .replace('第十六季','s16').replace('第十七季','s17').replace('第十八季','s18').replace('第十九季','s19').replace('第二十季','s20')
             menus.append(ListItem(label='搜索:[COLOR FF00FFFF]%s[/COLOR]' % (sstr),
                 label2=None, icon=None,
                 thumbnail=xbmc.translatePath( os.path.join( IMAGES_PATH, 'disksearch.png') ),
-                path=plugin.url_for('searchinit',stypes='pan,bt',sstr=six.ensure_binary(sstr),modify='1',otherargs='{}')))
+                path=plugin.url_for('searchinit',stypes='pan,bt',sstr=comm.ensure_binary(sstr),modify='1',otherargs='{}')))
 
         
         for cast in celes:
@@ -243,22 +242,22 @@ def dbsubject(subject):
             cast['name']+' '+cast['role']
             
             menus.append({'label': '[COLOR FFFF66AA]%s[/COLOR]%s' % (cast['name'],cast['role']),
-                    'path':  plugin.url_for('dbactor', sstr=six.ensure_binary(cast['id']),sort='time',page=0),
+                    'path':  plugin.url_for('dbactor', sstr=comm.ensure_binary(cast['id']),sort='time',page=0),
                     'context_menu':[('搜索'+colorize_label(cast['name'], color='00FF00'), 
-                        'Container.update('+plugin.url_for('searchinit',stypes='pan,bt,db',sstr=six.ensure_binary(cast['name']),modify='1',otherargs='{}')+')',)],
+                        'Container.update('+plugin.url_for('searchinit',stypes='pan,bt,db',sstr=comm.ensure_binary(cast['name']),modify='1',otherargs='{}')+')',)],
                     'thumbnail':thumb})
         
         menus.append({'label': '年代:[COLOR FF00AAFF]%s[/COLOR]' % (year),'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'tag.png') ),
-                    'path':  plugin.url_for('dbmovie',tags=six.ensure_binary(year),sort='U',page='0',addtag='0',scorerange='0',year_range='0')})
+                    'path':  plugin.url_for('dbmovie',tags=comm.ensure_binary(year),sort='U',page='0',addtag='0',scorerange='0',year_range='0')})
         for genre in genres:
             menus.append({'label': '类型:[COLOR FF00AAFF]%s[/COLOR]' % (genre),'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'tag.png') ),
-                    'path':  plugin.url_for('dbmovie',tags=six.ensure_binary(genre),sort='U',page='0',addtag='0',scorerange='0',year_range='0')})
+                    'path':  plugin.url_for('dbmovie',tags=comm.ensure_binary(genre),sort='U',page='0',addtag='0',scorerange='0',year_range='0')})
         for area in areas:
             menus.append({'label': '地区:[COLOR FF00AAFF]%s[/COLOR]' % (area),'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'tag.png') ),
-                    'path':  plugin.url_for('dbmovie',tags=six.ensure_binary(area),sort='U',page='0',addtag='0',scorerange='0',year_range='0')})
+                    'path':  plugin.url_for('dbmovie',tags=comm.ensure_binary(area),sort='U',page='0',addtag='0',scorerange='0',year_range='0')})
         for tag in tags:
             menus.append({'label': '标签:[COLOR FF00AAFF]%s[/COLOR]' % (tag),'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'tag.png') ),
-                    'path':  plugin.url_for('dbmovie',tags=six.ensure_binary(tag),sort='U',page='0',addtag='0',scorerange='0',year_range='0')})
+                    'path':  plugin.url_for('dbmovie',tags=comm.ensure_binary(tag),sort='U',page='0',addtag='0',scorerange='0',year_range='0')})
         return menus
     except Exception as e:
         xbmc.log(msg=format_exc(),level=xbmc.LOGERROR)
@@ -285,7 +284,7 @@ def dbgettag():
     for intyear in range(2015,curyear+1):
         filters['年代标签'].insert(0, str(intyear))
         
-    filters['自定义标签']=six.ensure_text(plugin.get_setting('dbdeftag')).lower().split(',')
+    filters['自定义标签']=comm.ensure_text(plugin.get_setting('dbdeftag')).lower().split(',')
     
     sstr=''
     dialog = xbmcgui.Dialog()
@@ -306,7 +305,7 @@ def dbgettag():
 @plugin.route('/dbmovie/<tags>/<sort>/<page>/<addtag>/<scorerange>/<year_range>')
 def dbmovie(tags='',sort='U',page=0,addtag=0,scorerange='',year_range=''):
     sorttypes=[('近期热门','U'),('标记最多','T'),('评分最高','S'),('最新上映','R')]
-    tags=six.ensure_text(tags)
+    tags=comm.ensure_text(tags)
     if tags=='0': tags=''
     if sort=='0': sort='U'
     if scorerange=='0': scorerange='0,10'
@@ -320,7 +319,7 @@ def dbmovie(tags='',sort='U',page=0,addtag=0,scorerange='',year_range=''):
     if tags:
         taglist.extend(tags.split(','))
     if tag:
-        taglist.append(six.ensure_text(tag))
+        taglist.append(comm.ensure_text(tag))
     #plugin.log.error(str(taglist))
     #if len(taglist)<1: return;
     tags=''
@@ -382,7 +381,7 @@ def dbmovie(tags='',sort='U',page=0,addtag=0,scorerange='',year_range=''):
                 .replace('第十一季','s11').replace('第十二季','s12').replace('第十三季','s13').replace('第十四季','s14').replace('第十五季','s15')\
                 .replace('第十六季','s16').replace('第十七季','s17').replace('第十八季','s18').replace('第十九季','s19').replace('第二十季','s20')
             context_menu_items.append(('搜索'+colorize_label(searchtitle, color='00FF00'), 
-                'Container.update('+plugin.url_for('searchinit',stypes='pan,bt,db',sstr=six.ensure_binary(searchtitle),modify='1',otherargs='{}')+')',))
+                'Container.update('+plugin.url_for('searchinit',stypes='pan,bt,db',sstr=comm.ensure_binary(searchtitle),modify='1',otherargs='{}')+')',))
                 
             listitem=ListItem(label='%s[[COLOR FFFF3333]%s[/COLOR]]'%(m['title'],m['rate']),
                     thumbnail= m['cover'], 
@@ -400,17 +399,17 @@ def dbmovie(tags='',sort='U',page=0,addtag=0,scorerange='',year_range=''):
             tags2=tags
         if len(menus)==20:
             menus.append({'label': '下一(第%d)页'%(int(page)+2),
-                'path': plugin.url_for('dbmovie',tags=six.ensure_binary(tags2),sort=sort,page=int(page)+1,addtag='0',scorerange=scorerange,year_range=year_range),
+                'path': plugin.url_for('dbmovie',tags=comm.ensure_binary(tags2),sort=sort,page=int(page)+1,addtag='0',scorerange=scorerange,year_range=year_range),
                 'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'nextpage.png') )})
         menus.insert(0, {'label': '标签:[COLOR FFFF3333]%s[/COLOR]'%(tags),
-            'path': plugin.url_for('dbmovie',tags=six.ensure_binary(tags2),sort=sort,page='0',addtag='1',scorerange=scorerange,year_range=year_range)})
+            'path': plugin.url_for('dbmovie',tags=comm.ensure_binary(tags2),sort=sort,page='0',addtag='1',scorerange=scorerange,year_range=year_range)})
         menus.insert(0, {'label': '年代:[COLOR FFFF3333]%s[/COLOR]'%(year_range),
-            'path': plugin.url_for('dbmovie',tags=six.ensure_binary(tags2),sort=sort,page='0',addtag='0',scorerange=scorerange,year_range='set')})
+            'path': plugin.url_for('dbmovie',tags=comm.ensure_binary(tags2),sort=sort,page='0',addtag='0',scorerange=scorerange,year_range='set')})
         menus.insert(0, {'label': '评分:[COLOR FFFF3333]%s[/COLOR]'%(scorerange),
-            'path': plugin.url_for('dbmovie',tags=six.ensure_binary(tags2),sort=sort,page='0',addtag='0',scorerange='set',year_range=year_range)})
+            'path': plugin.url_for('dbmovie',tags=comm.ensure_binary(tags2),sort=sort,page='0',addtag='0',scorerange='set',year_range=year_range)})
         
         menus.insert(0, {'label': '排序:[COLOR FFFF3333]%s[/COLOR]'%(sorttype),
-            'path': plugin.url_for('dbmovie',tags=six.ensure_binary(tags2),sort='set',page='0',addtag='0',scorerange=scorerange,year_range=year_range)})
+            'path': plugin.url_for('dbmovie',tags=comm.ensure_binary(tags2),sort='set',page='0',addtag='0',scorerange=scorerange,year_range=year_range)})
         
         comm.setViewCode='thumbnail'
         return menus
@@ -436,7 +435,7 @@ def rspmenus(rsp):
             menus.append({'label': '{0}. {1}[{2}][{3}]'.format(s, i[2], rating, i[3]),
                  'path': plugin.url_for('dbsubject', subject=i[0][i[0].find('subject')+7:].replace('/','')),
                  'context_menu':[('搜索'+colorize_label(i[2], color='00FF00'), 
-                    'Container.update('+plugin.url_for('searchinit',stypes='pan,bt',sstr=six.ensure_binary(i[2]),modify='1',otherargs='{}')+')',)],
+                    'Container.update('+plugin.url_for('searchinit',stypes='pan,bt',sstr=comm.ensure_binary(i[2]),modify='1',otherargs='{}')+')',)],
                 'thumbnail': i[1],})
                  #'thumbnail': i[1].replace('ipst','lpst').replace('img3.douban.com','img4.douban.com'),})
         return menus
@@ -467,7 +466,7 @@ def dbsearch(sstr, page=0):
                         'path': plugin.url_for('dbsubject', subject=m.group('dbsubject')),
                         'thumbnail': m.group('img'),
                         'context_menu':[('搜索'+colorize_label(title, color='00FF00'), 
-                            'Container.update('+plugin.url_for('searchinit',stypes='pan,bt',sstr=six.ensure_binary(m.group(2)),modify='1',otherargs='{}')+')',)],
+                            'Container.update('+plugin.url_for('searchinit',stypes='pan,bt',sstr=comm.ensure_binary(m.group(2)),modify='1',otherargs='{}')+')',)],
                         })
         '''
         minfo = json.loads(rsp[rsp.index('{'):])
@@ -490,7 +489,7 @@ def dbsearch(sstr, page=0):
                         'path': plugin.url_for('dbsubject', subject=m.group(1)),
                         'thumbnail': m.group(2),
                         'context_menu':[('搜索'+colorize_label(searchtitle, color='00FF00'), 
-                            'Container.update('+plugin.url_for('searchinit',stypes='pan,bt',sstr=six.ensure_binary(m.group(2)),modify='1',otherargs='{}')+')',)],
+                            'Container.update('+plugin.url_for('searchinit',stypes='pan,bt',sstr=comm.ensure_binary(m.group(2)),modify='1',otherargs='{}')+')',)],
                         })
                 else:
                     plugin.log.error(item)
@@ -510,7 +509,7 @@ def dbsearch(sstr, page=0):
     if int(page)+1<lastpage:
         menus.append({
             'label': '下一页',
-            'path': plugin.url_for('dbsearch', sstr=six.ensure_binary(sstr), page=int(page)+1),
+            'path': plugin.url_for('dbsearch', sstr=comm.ensure_binary(sstr), page=int(page)+1),
             'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'nextpage.png') ),
             })
     #except: pass
@@ -576,17 +575,17 @@ def dbactor(sstr,sort='time',page=0):
             summary = m.group("summary")
         menus =[]
         menus.append({'label':'简介：[COLOR FFFF2222]%s[/COLOR]'%celename,
-                    'path':  plugin.url_for('dbsummary', summary=six.ensure_binary(celename+celeinfo+summary)),
+                    'path':  plugin.url_for('dbsummary', summary=comm.ensure_binary(celename+celeinfo+summary)),
                     'thumbnail':celeimg})
         menus.append({'label':comm.colorize_label('影人图片',None,color='32FF94') ,
-                    'path':  plugin.url_for('celephotos', cele=six.ensure_binary(sstr),page=0),
+                    'path':  plugin.url_for('celephotos', cele=comm.ensure_binary(sstr),page=0),
                     'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'picture.png') )})
         if sort=='time':
             menus.append({'label': '按[COLOR FFFF3333]评分[/COLOR]排序',
-                'path': plugin.url_for('dbactor',sstr=six.ensure_binary(sstr),sort='vote',page='0')})
+                'path': plugin.url_for('dbactor',sstr=comm.ensure_binary(sstr),sort='vote',page='0')})
         else:
             menus.append({'label': '按[COLOR FFFF3333]时间[/COLOR]排序',
-                'path': plugin.url_for('dbactor',sstr=six.ensure_binary(sstr),sort='time',page='0')})
+                'path': plugin.url_for('dbactor',sstr=comm.ensure_binary(sstr),sort='time',page='0')})
         url = 'https://movie.douban.com/celebrity/%s/movies?start=%d&format=pic&sortby=%s&' % (sstr,int(page)*10,sort)
         rsp = _http(url)
         rtxt=r'subject\x2F(?P<id>[0-9]+)\x2F.*?img\ssrc\x3D\x22(?P<imgurl>.*?)\x22.*?title\x3D\x22(?P<title>.*?)\x22.*?\x22star\s.*?span\x3E(?P<rate>.*?)\x3C\x2Fdiv'
@@ -598,7 +597,7 @@ def dbactor(sstr,sort='time',page=0):
             
             context_menu_items=[]
             context_menu_items.append(('搜索'+colorize_label(sub.group('title'), color='00FF00'), 
-                'Container.update('+plugin.url_for('searchinit',stypes='pan,bt,db',sstr=six.ensure_binary(sub.group('title')),modify='1',otherargs='{}')+')',))
+                'Container.update('+plugin.url_for('searchinit',stypes='pan,bt,db',sstr=comm.ensure_binary(sub.group('title')),modify='1',otherargs='{}')+')',))
                 
             listitem=ListItem(label='%s[[COLOR FFFF3333]%s[/COLOR]]'%(sub.group('title'),rate),
                     thumbnail= sub.group('imgurl'), 
@@ -614,7 +613,7 @@ def dbactor(sstr,sort='time',page=0):
             totalpage=int((count-1)/30)
             if int(page)<totalpage:
                 menus.append({'label':'下一页','thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'nextpage.png') ),
-                        'path':  plugin.url_for('dbactor',sstr=six.ensure_binary(sstr),sort=sort,page=int(page)+1)})
+                        'path':  plugin.url_for('dbactor',sstr=comm.ensure_binary(sstr),sort=sort,page=int(page)+1)})
         
         comm.setViewCode='thumbnail'
         return menus
@@ -673,7 +672,7 @@ def dbtop(page):
                       'path': plugin.url_for('dbsubject', subject=i[0][i[0].find('subject')+7:].replace('/','')),
                       'thumbnail': i[2],
                       'context_menu':[('搜索'+colorize_label(searchtitle, color='00FF00'), 
-                        'Container.update('+plugin.url_for('searchinit',stypes='pan,bt',sstr=six.ensure_binary(i[1]),modify='1',otherargs='{}')+')',)],
+                        'Container.update('+plugin.url_for('searchinit',stypes='pan,bt',sstr=comm.ensure_binary(i[1]),modify='1',otherargs='{}')+')',)],
                       #'thumbnail': i[2].replace('ipst','lpst').replace('img3.douban.com','img4.douban.com'),
                  })
         
@@ -707,7 +706,7 @@ def dbtypetop(dbtype='1',start=0):
                 'path': plugin.url_for('dbsubject', subject=m['id']),
                 'thumbnail': m['cover_url'],
                 'context_menu':[('搜索'+colorize_label(m['title'], color='00FF00'), 
-                    'Container.update('+plugin.url_for('searchinit',stypes='pan,bt',sstr=six.ensure_binary(m['title']),modify='1',otherargs='{}')+')',)],
+                    'Container.update('+plugin.url_for('searchinit',stypes='pan,bt',sstr=comm.ensure_binary(m['title']),modify='1',otherargs='{}')+')',)],
                 })
             
         if not len(menus)>1: return

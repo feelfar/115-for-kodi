@@ -3,7 +3,7 @@
 from  __future__  import unicode_literals
 
 import sys
-import xbmc,xbmcgui,xbmcaddon,xbmcvfs,json,gzip,os,csv,time,shutil,collections
+import xbmc,xbmcgui,xbmcaddon,xbmcvfs,json,gzip,io,os,csv,time,shutil,collections
 
 try:
     xbmc.translatePath = xbmcvfs.translatePath
@@ -18,9 +18,8 @@ except ImportError:
 
 from datetime import datetime
 
-import lib.six as six
-from lib.six.moves.urllib import parse
-from lib.six.moves.urllib import request
+from urllib import parse
+from urllib import request
 
 def get_installedversion():
     # retrieve current installed version
@@ -33,7 +32,7 @@ def get_installedversion():
             version=int(json_query['result']['version']['major'])
     return version
 version=get_installedversion()
-
+        
 def keyboard(title=u'请输入搜索关键字',text=''):
     kb=xbmc.Keyboard(text,title)
     kb.doModal()
@@ -69,10 +68,11 @@ def _http(url, data=None,referer=None,cookie=None):
                 rsp = opener.open(req, timeout=15)
             
             if rsp.info().get('Content-Encoding') == 'gzip':
-                reponse = gzip.GzipFile(fileobj=six.BytesIO(rsp.read())).read()
+                reponse = gzip.GzipFile(fileobj=io.BytesIO(rsp.read())).read()
             else:
                 reponse = rsp.read()
-            reponse=six.ensure_text(reponse)
+            if isinstance(reponse,bytes):
+                reponse= reponse.decode('utf-8', 'strict')
             if 'Set-Cookie' in rsp.headers:
                 reponse='Set_Cookie:'+rsp.headers['Set-Cookie']+'\r'+reponse
             rsp.close()
@@ -127,8 +127,8 @@ def encode_obj(in_obj):
             out_dict[k] = encode_obj(v)
         return out_dict
 
-    if isinstance(in_obj, six.text_type):
-        return six.ensure_binary(in_obj)
+    if isinstance(in_obj,str):
+        return in_obj.encode('utf-8', 'strict')
     elif isinstance(in_obj, list):
         return encode_list(in_obj)
     elif isinstance(in_obj, tuple):

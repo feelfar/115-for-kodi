@@ -25,10 +25,8 @@ __temppath__  = xbmc.translatePath( os.path.join( __cwd__, 'temp') )
 if not os.path.exists(__temppath__):
     os.makedirs(__temppath__)
 
-import six
-from six.moves.urllib import parse
-from six.moves.urllib import request
-from six.moves import http_cookiejar as cookielib
+from urllib import parse
+from urllib import request
 from commfunc import _http,url_is_alive
 
 from xbmcswift2 import Plugin
@@ -129,3 +127,18 @@ def shellopenurl(url,samsung):
         xbmc.executebuiltin('StartAndroidActivity(%s,android.intent.action.VIEW,,%s)'%(androidbrowser,url))
         
 
+def ensure_text(s, encoding='utf-8', errors='strict'):
+    if isinstance(s, bytes):
+        return s.decode(encoding, errors)
+    elif isinstance(s, str):
+        return s
+    else:
+        raise TypeError("not expecting type '%s'" % type(s))
+
+def ensure_binary(s, encoding='utf-8', errors='strict'):
+    if isinstance(s, str):
+        return s.encode(encoding, errors)
+    elif isinstance(s, bytes):
+        return s
+    else:
+        raise TypeError("not expecting type '%s'" % type(s))

@@ -3,7 +3,7 @@
 from  __future__  import unicode_literals
 import sys
 
-import os,json,xbmc,xbmcplugin,xbmcgui,xbmcvfs,gzip,re,time,threading,socket,uuid,base64
+import io,os,json,xbmc,xbmcplugin,xbmcgui,xbmcvfs,gzip,re,time,threading,socket,uuid,base64
 try:
     xbmc.translatePath = xbmcvfs.translatePath
 except AttributeError:
@@ -27,10 +27,9 @@ IMAGES_PATH = comm.IMAGES_PATH
 __subpath__  = comm.__subpath__
 __temppath__  = comm.__temppath__
 
-import lib.six as six
-from lib.six.moves.urllib import parse
-from lib.six.moves.urllib import request
-from lib.six.moves import http_cookiejar as cookielib
+from urllib import parse
+from urllib import request
+import http.cookiejar as cookielib
 
 from commfunc import keyboard,_http,encode_obj,notify
 
@@ -261,7 +260,7 @@ class api_115(object):
                             self.downcookie+=downcook+';'
             
                 if rsp.headers.get('content-encoding', '') == 'gzip':
-                    content = gzip.GzipFile(fileobj=six.BytesIO(rsp.read())).read()
+                    content = gzip.GzipFile(fileobj=io.BytesIO(rsp.read())).read()
                 else:
                     content = rsp.read()
                 rsp.close()
@@ -270,7 +269,7 @@ class api_115(object):
             if binary:
                 return content
             else:
-                return six.ensure_text(content)
+                return comm.ensure_text(content)
         except Exception as e:
             xbmc.log(msg=format_exc(),level=xbmc.LOGERROR)
             plugin.log.error('zzzdebug:%s'%e)
@@ -687,28 +686,30 @@ class api_115(object):
             
             if 'url' in jsondata:
                 result = jsondata['url']['url']
+                if result:
+                    result=result+'|'+self.downcookie
+                    self.notesavecontent(cname='pickcodeurl',notetitle=pc,content=result)
+        if result:
+            filedownloadurl=downcookie=''
+            if result.find('|')>0:
+                filedownloadurl,downcookie=result.split('|')
+            else:
+                filedownloadurl=result
                 
-            
-        #if withcookie:
-                cookies=''
-                try:
-                    for cookie in self.cookiejar:
-                        if cookie.domain.find('115.')>=0:
-                            cookies+=str(cookie.name)+'='+str(cookie.value)+';'
-                    cookies+=self.downcookie+';'
-                except Exception as e:
-                    xbmc.log(msg=format_exc(),level=xbmc.LOGERROR)
-                    plugin.log.error('zzzdebug:%s'%e)
-                    os.remove(cookiefile)
-                #return result+'|Cookie='+cookies
-                #return result+'&'+cookies
+            cookies=''
+            try:
+                for cookie in self.cookiejar:
+                    if cookie.domain.find('115.')>=0:
+                        cookies+=str(cookie.name)+'='+str(cookie.value)+';'
+                cookies+=downcookie+';'
                 headers=self.headers.copy()
                 headers.update({'Cookie':cookies})
                 headers.update({'User-Agent':defaultUserAgent})
                 headers.update({'Referer': 'https://115.com/?cid=0&offset=0&mode=wangpan'})
-                result=result+'|'+parse.urlencode(headers)
-                self.notesavecontent(cname='pickcodeurl',notetitle=pc,content=result)
-        #plugin.log.error(result)
+                result=filedownloadurl+'|'+parse.urlencode(headers)
+            except Exception as e:
+                xbmc.log(msg=format_exc(),level=xbmc.LOGERROR)
+                os.remove(cookiefile)
         return result
         
     def fetch(self,wstream):
@@ -716,7 +717,7 @@ class api_115(object):
             return ''
         try:
             if wstream.headers.get('content-encoding', '') == 'gzip':
-                content = gzip.GzipFile(fileobj=six.StringIO(wstream.read())).read()
+                content = gzip.GzipFile(fileobj=io.StringIO(wstream.read())).read()
             else:
                 content = wstream.read()
             return content
@@ -1072,7 +1073,7 @@ def pantagsearch(otherargs):
 def searchinit(stypes,sstr,modify,otherargs):
     if not 'strlist' in comm.searchvalues.raw_dict():
         comm.searchvalues['strlist']=[]
-    sstr=six.ensure_text(sstr)
+    sstr=comm.ensure_text(sstr)
     sstr=sstr.strip()
     liststypes=stypes.split(',')
     if str(plugin.get_setting('javbus'))!='true':
@@ -1082,7 +1083,7 @@ def searchinit(stypes,sstr,modify,otherargs):
     if not isinstance(dictotherargs,dict):
         dictotherargs={}
     if sstr and sstr!='0' and modify=='0':
-        comm.searchvalues['strlist']= [e for e in comm.searchvalues['strlist'] if six.ensure_binary(e)!=six.ensure_binary(sstr)]
+        comm.searchvalues['strlist']= [e for e in comm.searchvalues['strlist'] if comm.ensure_binary(e)!=comm.ensure_binary(sstr)]
         comm.searchvalues['strlist'].append(sstr)
         comm.searchvalues.sync()
         return stypesearch(liststypes,sstr,dictotherargs)
@@ -1105,7 +1106,7 @@ def searchinit(stypes,sstr,modify,otherargs):
                 comm.searchvalues.sync()
                 return stypesearch(liststypes,newsstr,dictotherargs)
             else:
-                updataurl=plugin.url_for('searchinit',stypes=stypes,sstr=six.ensure_binary(newsstr),modify='0',otherargs=otherargs)
+                updataurl=plugin.url_for('searchinit',stypes=stypes,sstr=comm.ensure_binary(newsstr),modify='0',otherargs=otherargs)
                 #xbmc.log(msg=updataurl,level=xbmc.LOGERROR)
                 #xbmc.executebuiltin('Container.update(%s)'%updataurl)
                 xbmc.executebuiltin('RunPlugin(%s)'%updataurl)
@@ -1125,7 +1126,7 @@ def searchinit(stypes,sstr,modify,otherargs):
             comm.searchvalues.sync()
             return stypesearch(liststypes,newsstr,dictotherargs)
             #comm.searchvalues['strlist']= [e for e in comm.searchvalues['strlist'] if e!=newsstr]
-            #updataurl=plugin.url_for('searchinit',stypes=stypes,sstr=six.ensure_binary(newsstr),modify='1',otherargs=otherargs)
+            #updataurl=plugin.url_for('searchinit',stypes=stypes,sstr=comm.ensure_binary(newsstr),modify='1',otherargs=otherargs)
             #xbmc.executebuiltin('Container.update(%s)'%updataurl)
             #xbmc.executebuiltin('RunPlugin(%s)'%updataurl)
         if modify=='2':
@@ -1143,9 +1144,9 @@ def searchinit(stypes,sstr,modify,otherargs):
         for strvalue in comm.searchvalues['strlist'][::-1]:
             context_menu_items=[]
             listitem=ListItem(label=strvalue, label2=None, icon=None, thumbnail=None, 
-                    path=plugin.url_for('searchinit',stypes=stypes,sstr=six.ensure_binary(strvalue),modify='0',otherargs=otherargs))
-            context_menu_items.append(('编辑关键字'+colorize_label(six.ensure_text(strvalue), color='0000FF'), 'RunPlugin('+plugin.url_for('searchinit',stypes=stypes,sstr=six.ensure_binary(strvalue),modify='1',otherargs=otherargs)+')',))
-            context_menu_items.append(('删除关键字'+colorize_label(six.ensure_text(strvalue), color='FF0000'), 'RunPlugin('+plugin.url_for('searchinit',stypes=stypes,sstr=six.ensure_binary(strvalue),modify='2',otherargs=otherargs)+')',))
+                    path=plugin.url_for('searchinit',stypes=stypes,sstr=comm.ensure_binary(strvalue),modify='0',otherargs=otherargs))
+            context_menu_items.append(('编辑关键字'+colorize_label(comm.ensure_text(strvalue), color='0000FF'), 'RunPlugin('+plugin.url_for('searchinit',stypes=stypes,sstr=comm.ensure_binary(strvalue),modify='1',otherargs=otherargs)+')',))
+            context_menu_items.append(('删除关键字'+colorize_label(comm.ensure_text(strvalue), color='FF0000'), 'RunPlugin('+plugin.url_for('searchinit',stypes=stypes,sstr=comm.ensure_binary(strvalue),modify='2',otherargs=otherargs)+')',))
             if len(context_menu_items)>0:
                 listitem.add_context_menu_items(context_menu_items)
             items.append(listitem)
@@ -1190,7 +1191,7 @@ def pansearch(cid,mstr,offset):
             comm.setViewCode='thumbnail'
         return items
     else:
-        notify(msg='数据获取失败,错误信息:'+six.ensure_text(data['error']))
+        notify(msg='数据获取失败,错误信息:'+comm.ensure_text(data['error']))
         login()
         return
         
@@ -1201,42 +1202,42 @@ def getListItem(item,pathname=''):
     #plugin.log.error(item)
     context_menu_items=[]
     context_menu_items.append(('搜索'+colorize_label(item['n'], color='00FF00'), 
-        'Container.update('+plugin.url_for('searchinit',stypes='pan,bt,db,jav',sstr=six.ensure_binary(item['n']),modify='4',otherargs='0')+')',))
+        'Container.update('+plugin.url_for('searchinit',stypes='pan,bt,db,jav',sstr=comm.ensure_binary(item['n']),modify='4',otherargs='0')+')',))
     #context_menu_items.append(('搜索'+colorize_label(item['n'], color='00FF00'), 
-    #    'RunPlugin('+plugin.url_for('searchinit',stypes='pan,bt,db,jav',sstr=six.ensure_binary(item['n']),modify='4',otherargs='0')+')',))
+    #    'RunPlugin('+plugin.url_for('searchinit',stypes='pan,bt,db,jav',sstr=comm.ensure_binary(item['n']),modify='4',otherargs='0')+')',))
     if 'sha' in item:
         context_menu_items.append(('用'+colorize_label('浏览器','dir')+'打开代理链接', 
-                'RunPlugin('+plugin.url_for('shellopen',pc=item['pc'],fname=six.ensure_binary(item['n']))+')',))
+                'RunPlugin('+plugin.url_for('shellopen',pc=item['pc'],fname=comm.ensure_binary(item['n']))+')',))
         if 'iv' in item:
             isiso='1'
             if 'vdi' in item:
                 if item['vdi']>=1:
                     isiso='0'
             listitem=ListItem(label=colorize_label(item['n'], 'video'), label2=None, icon=None, thumbnail=None, 
-                    path=plugin.url_for('play',pc=item['pc'],name=six.ensure_binary(item['n']),iso=isiso))
+                    path=plugin.url_for('play',pc=item['pc'],name=comm.ensure_binary(item['n']),iso=isiso))
             
             listitem.set_info('video', {'title':item['n'],'size': item['s']})
             listitem.set_is_playable(True)
             context_menu_items.append(('FFMpeg转码下载', 
-                'RunPlugin('+plugin.url_for('ffmpeg',pc=item['pc'],name=six.ensure_binary(item['n']))+')',))
+                'RunPlugin('+plugin.url_for('ffmpeg',pc=item['pc'],name=comm.ensure_binary(item['n']))+')',))
             
         elif 'ms' in item:
             #imgurl=getimgurl(item['pc'])
             listitem=ListItem(label=colorize_label(item['n'], 'image'), label2=None, icon=None, thumbnail=xbmc.translatePath(os.path.join( IMAGES_PATH, 'picture.png')),
-                    path=plugin.url_for('playimg',pc=item['pc'],name=six.ensure_binary(item['n'])))
+                    path=plugin.url_for('playimg',pc=item['pc'],name=comm.ensure_binary(item['n'])))
             #listitem=ListItem(label=colorize_label(item['n'], 'image'), label2=None, icon=None, thumbnail=None, path=imgurl)
             #listitem.set_info('pictures', {"Title": item['n'] } )
             listitem.playable=False
 
 
         elif item['ico'] in videoexts:
-            listitem=ListItem(label=colorize_label(item['n'], 'video'), label2=None, icon=None, thumbnail=None, path=plugin.url_for('play',pc=item['pc'],name=six.ensure_binary(item['n']),iso='1'))
+            listitem=ListItem(label=colorize_label(item['n'], 'video'), label2=None, icon=None, thumbnail=None, path=plugin.url_for('play',pc=item['pc'],name=comm.ensure_binary(item['n']),iso='1'))
             listitem.set_info('video', {'title':item['n'],'size': item['s']})
             #listitem.as_xbmc_listitem().setContentLookup(False)
             listitem.set_is_playable('true')
             
         elif  item['ico'] in musicexts:
-            listitem=ListItem(label=colorize_label(item['n'], 'audio'), label2=None, icon=None, thumbnail=None, path=plugin.url_for('play',pc=item['pc'],name=six.ensure_binary(item['n']),iso='1'))
+            listitem=ListItem(label=colorize_label(item['n'], 'audio'), label2=None, icon=None, thumbnail=None, path=plugin.url_for('play',pc=item['pc'],name=comm.ensure_binary(item['n']),iso='1'))
             listitem.set_info('audio', {'title':item['n'],'size': item['s']})
             listitem.playable=True
 
@@ -1269,7 +1270,7 @@ def getListItem(item,pathname=''):
         if str(plugin.get_setting('panedit'))=='true':
             if listitem!=None and 'cid' in item and 'fid' in item:
                 warringmsg='是否删除文件:'+item['n']
-                deleteurl=plugin.url_for('deletefile',pid=item['cid'],fid=item['fid'],warringmsg=six.ensure_binary(warringmsg))
+                deleteurl=plugin.url_for('deletefile',pid=item['cid'],fid=item['fid'],warringmsg=comm.ensure_binary(warringmsg))
                 context_menu_items.append((colorize_label('删除',color='FF0044'), 'RunPlugin('+deleteurl+')',))
     else:
         listitem=ListItem(label=colorize_label(item['n'], 'dir'), label2=None, icon=None, thumbnail=None, path=plugin.url_for('getfilelist',cid=item['cid'],offset=0,star='0',typefilter=0,searchstr='0',changesort='0'))
@@ -1282,7 +1283,7 @@ def getListItem(item,pathname=''):
             if 'cid' in item and 'pid' in item:
                 warringmsg='是否删除目录及其下所有文件:'+item['n']
                 #listitem.add_context_menu_items([('删除', 'RunPlugin('+plugin.url_for('deletefile',pid=item['pid'],fid=item['cid'],warringmsg=warringmsg)+')',)])
-                deleteurl=plugin.url_for('deletefile',pid=item['pid'],fid=item['cid'],warringmsg=six.ensure_binary(warringmsg))
+                deleteurl=plugin.url_for('deletefile',pid=item['pid'],fid=item['cid'],warringmsg=comm.ensure_binary(warringmsg))
                 context_menu_items.append((colorize_label('删除',color='FF0044'), 'RunPlugin('+deleteurl+')',))
     fl=','
     if 'fid' in item:
@@ -1295,16 +1296,16 @@ def getListItem(item,pathname=''):
             if len(tag['color'])==7:
                 
                 #listitem.label=listitem.label
-                listitem.label=six.ensure_binary(colorize_label('●', color=tag['color'][1:]))+six.ensure_binary(listitem.label)
+                listitem.label=comm.ensure_binary(colorize_label('●', color=tag['color'][1:]))+comm.ensure_binary(listitem.label)
     context_menu_items.append((colorize_label('设置标签',color='00CCCC'), 'RunPlugin('+plugin.url_for('settag',fid=fid,fllist=fl)+')',))        
     if 'm' in item and  listitem!=None:
         listitem.set_property('is_mark',str(item['m']))
-        listitem.label=six.ensure_binary(colorize_label('★', 'star'+six.text_type(item['m'])))+six.ensure_binary(listitem.label)
+        listitem.label=comm.ensure_binary(colorize_label('★', 'star'+str(item['m'])))+comm.ensure_binary(listitem.label)
         
                 
         if str(plugin.get_setting('panedit'))=='true':
-            context_menu_items.append((colorize_label('重命名',color='0044FF'), 'RunPlugin('+plugin.url_for('rename',fid=fid,filename=six.ensure_binary(item['n']))+')',))
-            context_menu_items.append((colorize_label('移动..',color='00FF44'), 'RunPlugin('+plugin.url_for('move',fid=fid,filename=six.ensure_binary(item['n']))+')',))
+            context_menu_items.append((colorize_label('重命名',color='0044FF'), 'RunPlugin('+plugin.url_for('rename',fid=fid,filename=comm.ensure_binary(item['n']))+')',))
+            context_menu_items.append((colorize_label('移动..',color='00FF44'), 'RunPlugin('+plugin.url_for('move',fid=fid,filename=comm.ensure_binary(item['n']))+')',))
         if str(item['m'])=='0':
             #listitem.add_context_menu_items([('星标', 'RunPlugin('+plugin.url_for('mark',fid=fid,mark='1')+')',)])
             context_menu_items.append((colorize_label('星标',color='FFFF00'), 'RunPlugin('+plugin.url_for('mark',fid=fid,mark='1')+')',))
@@ -1332,7 +1333,7 @@ def deletefile(pid,fid,warringmsg):
             if data['state']:
                 xbmc.executebuiltin('Container.Refresh()')
             else:
-                notify(msg='删除失败,错误信息:'+six.ensure_text(data['error']))
+                notify(msg='删除失败,错误信息:'+comm.ensure_text(data['error']))
                 return
         except:
             notify(msg='删除失败')
@@ -1348,7 +1349,7 @@ def mark(fid,mark):
         if data['state']:
             xbmc.executebuiltin('Container.Refresh()')
         else:
-            notify(msg='星标失败,错误信息:'+six.ensure_text(data['error']))
+            notify(msg='星标失败,错误信息:'+comm.ensure_text(data['error']))
             return
     except:
             notify(msg='星标失败')
@@ -1436,7 +1437,7 @@ def createdir(pid,cname):
         if data['state']:
             return data['cid']
         else:
-            notify(msg='新建文件夹失败,错误信息:'+six.ensure_text(data['error']))
+            notify(msg='新建文件夹失败,错误信息:'+comm.ensure_text(data['error']))
             return pid
     except:
             notify(msg='新建文件夹失败')
@@ -1491,7 +1492,7 @@ def move(fid,filename):
             if data['state']:
                 xbmc.executebuiltin('Container.Refresh()')
             else:
-                notify(msg='移动失败,错误信息:'+six.ensure_text(data['error']))
+                notify(msg='移动失败,错误信息:'+comm.ensure_text(data['error']))
                 return
         except:
                 notify(msg='移动失败')
@@ -1578,13 +1579,13 @@ def getfilelist(cid,offset,star,typefilter='0',searchstr='0',changesort='0'):
                         'path': plugin.url_for('getfilelist',cid=cid,offset=0,star='0',typefilter=typefilter,searchstr='0',changesort='0')})
         if 'order' in data:
             sorttypedisp=colorize_label('文件排序:'+sorttypelist[int(cursorttype['s'])], 'sort')
-            items.append({'label': sorttypedisp, 'path': plugin.url_for('getfilelist',cid=cid,offset=0,star=star,typefilter=typefilter,searchstr=six.ensure_binary(searchstr),changesort='1')})
+            items.append({'label': sorttypedisp, 'path': plugin.url_for('getfilelist',cid=cid,offset=0,star=star,typefilter=typefilter,searchstr=comm.ensure_binary(searchstr),changesort='1')})
         typedisp=colorize_label('筛选:全部', 'filter')
         if typefilter=='4':typedisp=colorize_label('筛选:视频', 'filter')
         if typefilter=='2':typedisp=colorize_label('筛选:图片', 'filter')
         if typefilter=='3':typedisp=colorize_label('筛选:音乐', 'filter')
         items.append({'label': typedisp, 'path': plugin.url_for('getfilelist',cid=cid,offset=0,
-        star=star,typefilter='-1',searchstr=six.ensure_binary(searchstr),changesort='0')})
+        star=star,typefilter='-1',searchstr=comm.ensure_binary(searchstr),changesort='0')})
         if 'data' in data:
             for item in data['data']:
                 #data['data']有时不是list,而是dict, foreach后返回的是key文本。20180425
@@ -1600,14 +1601,14 @@ def getfilelist(cid,offset,star,typefilter='0',searchstr='0',changesort='0'):
         if data['count']>int(offset)+int(pageitem):
             items.append({'label': colorize_label('下一页', 'next'),
                 'path': plugin.url_for('getfilelist',cid=cid,offset=str(int(offset)+int(pageitem)),
-                                        star=star,typefilter=typefilter,searchstr=six.ensure_binary(searchstr),changesort='0'),
+                                        star=star,typefilter=typefilter,searchstr=comm.ensure_binary(searchstr),changesort='0'),
                 'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'nextpage.png') )})
         comm.setViewCode='list'
         if imagecount >= 10 and imagecount * 2 > len(items):
             comm.setViewCode='thumbnail'
         return items
     else:
-        notify(msg='数据获取失败,错误信息:'+six.ensure_text(data['error']))
+        notify(msg='数据获取失败,错误信息:'+comm.ensure_text(data['error']))
         login()
         return
 
@@ -1709,19 +1710,8 @@ def getvideourl(pc,fid,stm,name=''):
             return '-1'
         #if changeserver!='':
         #    notify('CDN服务器:'+changeserver)
-        playmode=str(plugin.get_setting('playmode'))
-        videourl=xl.getfiledownloadurl(pc,changeserver=changeserver,withcookie=True)
-        match = re.search("//(?P<CDN>.*115\x2ecom)/", videourl, re.IGNORECASE | re.DOTALL)
-        if match:
-            #pass
-            notify('CDN服务器:'+ match.group("CDN"))
-        if playmode=='0' and videourl:
-            #preurl=pre_file_play(fid)
-            #result=_http(preurl)
-            videourl=get_file_download_url(pc,fid,isvideo=True,changeserver=changeserver,name=parse.quote_plus(name))
-            #notify('Name:'+ name)
-            #videourl=get_file_download_url(pc,fid,isvideo=True,changeserver='cdamz.115.com',name=name)
-        #videourl=videourl+'|User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.181 Safari/537.36'
+        playmode=int(plugin.get_setting('playmode'))
+        videourl=get_file_download_url(pc,fid,playmode=playmode,changeserver=changeserver,name=parse.quote_plus(name))
     else:
         datam=xl.urlopen('http://115.com/api/video/m3u8/'+pc+'.m3u8')
         m3u8urls=[]
@@ -1766,7 +1756,7 @@ def play(pc,name,iso):
             for s in data['subtitle_info']:
                 sub_pcs[('_builtin_'+s['title'])]=s['url']
     subpath=''
-    name=six.ensure_text(name)
+    name=comm.ensure_text(name)
     #notify(msg=str(type(name)))
     name=name[:name.rfind('.')].lower()
     #notify(msg=str(comm.subcache.raw_dict()))
@@ -1811,29 +1801,29 @@ def play(pc,name,iso):
             subpath=subpath[:subpath.rfind('.')]
             [urlidx,urlsub]=suburl.split(' ')
             subdata = xl.urlopen(urlidx,binary=True)
-            with open(six.ensure_binary(subpath+'.idx'), "wb") as subFile:
+            with open(comm.ensure_binary(subpath+'.idx'), "wb") as subFile:
                 subFile.write(subdata)
             subFile.close()
             subdata = xl.urlopen(urlsub,binary=True)
-            with open(six.ensure_binary(subpath+'.sub'), "wb") as subFile:
+            with open(comm.ensure_binary(subpath+'.sub'), "wb") as subFile:
                 subFile.write(subdata)
             subFile.close()
             subpath=subpath+'.idx'
         else:
             subdata = xl.urlopen(suburl,binary=True)
-            with open(six.ensure_binary(subpath), "wb") as subFile:
+            with open(comm.ensure_binary(subpath), "wb") as subFile:
                 subFile.write(subdata)
             subFile.close()
 
-    #plugin.set_resolved_url(videourl,six.ensure_text(subpath))
-    #plugin.set_resolved_url(videourl,six.ensure_text(suburl))
+    #plugin.set_resolved_url(videourl,comm.ensure_text(subpath))
+    #plugin.set_resolved_url(videourl,comm.ensure_text(suburl))
     #plugin.set_resolved_url(videourl)
     play_item = plugin._listitemify({'path': videourl})
     play_item.set_played(True)
     
     #play_item.setPath(videourl)
     if subpath:
-        play_item.as_xbmc_listitem().setSubtitles([six.ensure_text(subpath)])
+        play_item.as_xbmc_listitem().setSubtitles([comm.ensure_text(subpath)])
     xbmcplugin.setResolvedUrl(int(sys.argv[1]), True,
                                   play_item.as_xbmc_listitem())
     return [play_item]
@@ -1852,7 +1842,7 @@ def ffmpeg(pc,name):
         return
     plugin.log.error(videourl)
     ext='.mp4'
-    name=six.ensure_text(name)
+    name=comm.ensure_text(name)
     #if str(stm)=='99':
         #ext=name[name.rfind('.'):].lower()
     name=name[:name.rfind('.')].lower()
@@ -1909,17 +1899,17 @@ def ffmpeg(pc,name):
             subpath=subpath[:subpath.rfind('.')]
             [urlidx,urlsub]=suburl.split(' ')
             subdata = xl.urlopen(urlidx,binary=True)
-            with open(six.ensure_binary(subpath+'.idx'), "wb") as subFile:
+            with open(comm.ensure_binary(subpath+'.idx'), "wb") as subFile:
                 subFile.write(subdata)
             subFile.close()
             subdata = xl.urlopen(urlsub,binary=True)
-            with open(six.ensure_binary(subpath+'.sub'), "wb") as subFile:
+            with open(comm.ensure_binary(subpath+'.sub'), "wb") as subFile:
                 subFile.write(subdata)
             subFile.close()
             subpath=subpath+'.idx'
         else:
             subdata = xl.urlopen(suburl,binary=True)
-            with open(six.ensure_binary(subpath), "wb") as subFile:
+            with open(comm.ensure_binary(subpath), "wb") as subFile:
                 subFile.write(subdata)
             subFile.close()
     
@@ -1973,8 +1963,9 @@ def offline_bt(sha1):
 def pre_file_play(fid):
     return 'http://%s/pre/%s/%s' % (plugin.get_setting('proxyserver'),fid,xl.getcookiesstr())
         
-def get_file_download_url(pc,fid,isvideo=False,changeserver='',name=''):
-    if isvideo:
+def get_file_download_url(pc,fid,playmode=0,changeserver='',name=''):
+    result=''
+    if playmode==0:
         result='http://%s/115/%s/%s/%s/%s' % (plugin.get_setting('proxyserver'),fid,xl.getcookiesstr(),changeserver,name)
     else:
         result=xl.getfiledownloadurl(pc,changeserver,withcookie=True)
@@ -1991,7 +1982,7 @@ def delete_offline_list(hashinfo,warringmsg):
         if data['state']:
             xbmc.executebuiltin('Container.Refresh()')
         else:
-            notify(msg='删除失败,错误信息:'+six.ensure_text(data['error']))
+            notify(msg='删除失败,错误信息:'+comm.ensure_text(data['error']))
             return
 
 @plugin.route('/offline_list')
@@ -2016,19 +2007,19 @@ def offline_list():
         
         listitem=ListItem(label=item['name']+colorize_label("["+msg_st[str(item['status'])]+"]", str(item['status'])), label2=None, icon=None, thumbnail=None, path=plugin.url_for('getfilelist',cid=item['file_id'],offset='0',star='0',typefilter='0',searchstr='0',changesort='0'))
         _hash = parse.urlencode(encode_obj({'uid':uid,'time':str(int(time.time())),r'hash[0]': item['info_hash']}))
-        listitem.add_context_menu_items([('删除离线任务', 'RunPlugin('+plugin.url_for('delete_offline_list',hashinfo=_hash,warringmsg=six.ensure_binary('是否删除任务'))+')',)])
+        listitem.add_context_menu_items([('删除离线任务', 'RunPlugin('+plugin.url_for('delete_offline_list',hashinfo=_hash,warringmsg=comm.ensure_binary('是否删除任务'))+')',)])
         
         items.append(listitem)
     if j>0:
         _hash = parse.urlencode(clearfaile)
         items.insert(0, {
             'label': colorize_label('清空失败任务','-1'),
-            'path': plugin.url_for('delete_offline_list',hashinfo=_hash,warringmsg=six.ensure_binary('是否清空'+str(j)+'个失败任务'))})
+            'path': plugin.url_for('delete_offline_list',hashinfo=_hash,warringmsg=comm.ensure_binary('是否清空'+str(j)+'个失败任务'))})
     if i>0:
         _hash = parse.urlencode(clearcomplete)
         items.insert(0, {
             'label': colorize_label('清空完成任务','2'),
-            'path': plugin.url_for('delete_offline_list',hashinfo=_hash,warringmsg=six.ensure_binary('是否清空'+str(i)+'个完成任务'))})
+            'path': plugin.url_for('delete_offline_list',hashinfo=_hash,warringmsg=comm.ensure_binary('是否清空'+str(i)+'个完成任务'))})
     return items
 
 @plugin.route('/proxyurl/<url>')
@@ -2129,7 +2120,7 @@ def ffmpegdl(input,output,subtitle='',stm='-1'):
         subtitlets=times1
     plugin.log.error(input)
     plugin.log.error(output)
-    output=six.ensure_text(output)
+    output=comm.ensure_text(output)
     
     dlcmd='ffmpeg %s -i \"%s\" %s %s %s %s %s %s \"%s\"'%(times1,input,subtitlets,subtitle,ffmpegopt,subtitlecs,times2,timedt,output)
     #dlcmd= u'ffmpeg %s -i \"%s\" %s %s %s %s %s \"%s\"'%(times1,input,subtitle,ffmpegopt,subtitlecs,times2,timedt,output)
@@ -2164,7 +2155,7 @@ def genm3u8(cid,offset,star,typefilter,searchstr,savepath,stm,name):
                             fname=fname+'_'+pname
                     fname=fname[-40:]+'_'+pname
                     fname=fname[0:60]
-                    fname=six.ensure_binary(fname.replace('\n','').replace('\r',''))
+                    fname=comm.ensure_binary(fname.replace('\n','').replace('\r',''))
                     fname = re.sub('[\/:*?"<>|]','-',fname)
                     #plugin.log.error(fname)
                     url=getvideourl(item['pc'],item['fid'],stm)
@@ -2253,7 +2244,7 @@ def offline(url):
 @plugin.route('/execmagnet/<url>/<title>/<msg>')
 def execmagnet(url,title='',msg=''):
     dialog = xbmcgui.Dialog()
-    ret = dialog.yesno('是否离线 '+six.ensure_text(title)+'?', msg)
+    ret = dialog.yesno('是否离线 '+comm.ensure_text(title)+'?', msg)
     if ret:
         info_hash=offline(url)
         

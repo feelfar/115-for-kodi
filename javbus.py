@@ -7,8 +7,7 @@ try:
 except AttributeError:
     pass
 import comm
-import lib.six as six
-from lib.six.moves.urllib import parse
+from urllib import parse
 from traceback import format_exc
 plugin = comm.plugin
 __cwd__=comm.__cwd__
@@ -105,7 +104,7 @@ def javmagnet(qbbb='qb',gid='0',uc='0'):
             label2=filesize, icon=None,
             thumbnail=xbmc.translatePath( os.path.join( IMAGES_PATH, 'magnet.jpg') ), 
             path=plugin.url_for('execmagnet',
-            url=six.ensure_binary(magnet),title=six.ensure_binary(title),msg=six.ensure_binary(filemsg)))
+            url=comm.ensure_binary(magnet),title=comm.ensure_binary(title),msg=comm.ensure_binary(filemsg)))
         
         menus.append(listitem)
     return menus
@@ -138,36 +137,12 @@ def javdetail(qbbb='qb',movieno='0',id='0',title='0'):
                         'path': plugin.url_for('javmagnet', qbbb=qbbb, gid=gid,uc=uc),
                         'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'magnet.jpg') )})
     context_menu_items=[]
-    '''
-    context_menu_items.append(('搜索'+colorize_label(id, color='00FF00'), 
-        'Container.update('+plugin.url_for('searchinit',stypes='pan,bt',sstr=six.ensure_binary(id),modify='1',otherargs='{}')+')',))
-        
-    listitem=ListItem(label='BT:[COLOR FF00FFFF]%s[/COLOR]' % (id),
-            thumbnail=xbmc.translatePath( os.path.join( IMAGES_PATH, 'magnet.jpg') ), 
-            path=plugin.url_for('btsearchInit', sstr=id, modify='0'),)
-            
-    if len(context_menu_items)>0 and listitem!=None:
-        listitem.add_context_menu_items(context_menu_items)
-        menus.append(listitem)
-    title=six.ensure_text(title)
-    context_menu_items=[]
-    context_menu_items.append((six.ensure_binary('搜索'+colorize_label(title, color='00FF00')), 
-        'Container.update('+plugin.url_for('searchinit',stypes='pan,bt',sstr=six.ensure_binary(title),modify='1',otherargs='{}')+')',))
-        
-    listitem=ListItem(label='BT:[COLOR FF00FFFF]%s[/COLOR]' % (title),
-            thumbnail=xbmc.translatePath( os.path.join( __cwd__, 'magnet.jpg') ), 
-            path=plugin.url_for('btsearchInit', sstr=six.ensure_binary(title), modify='0'),)
-            
-    if len(context_menu_items)>0 and listitem!=None:
-        listitem.add_context_menu_items(context_menu_items)
-        menus.append(listitem)
-    '''
     menus.append(ListItem(label='搜索:[COLOR FF00FFFF]%s[/COLOR]' % (id),
             thumbnail=xbmc.translatePath( os.path.join( IMAGES_PATH, 'disksearch.jpg') ), 
-            path=plugin.url_for('searchinit',stypes='pan,bt',sstr=six.ensure_binary(id),modify='1',otherargs='{}'),))
-    menus.append(ListItem(label='搜索:[COLOR FF00FFFF]%s[/COLOR]' % (six.ensure_text(title)),
+            path=plugin.url_for('searchinit',stypes='pan,bt',sstr=comm.ensure_binary(id),modify='1',otherargs='{}'),))
+    menus.append(ListItem(label='搜索:[COLOR FF00FFFF]%s[/COLOR]' % (comm.ensure_text(title)),
             thumbnail=xbmc.translatePath( os.path.join( IMAGES_PATH, 'disksearch.jpg') ), 
-            path=plugin.url_for('searchinit',stypes='pan,bt',sstr=six.ensure_binary(title),modify='1',otherargs='{}'),))
+            path=plugin.url_for('searchinit',stypes='pan,bt',sstr=comm.ensure_binary(title),modify='1',otherargs='{}'),))
     releech='"bigImage"\x20href="(?P<mainimg>.*?)"><'
     leech = re.compile(releech, re.S)
     movieid=''
@@ -217,7 +192,7 @@ def javdetail(qbbb='qb',movieno='0',id='0',title='0'):
                 menus.append({'label':'%s:%s'%(filtertypename,filtername),
                       'path':plugin.url_for('javlist', qbbb=qbbb,filtertype=filtertype,filterkey=filterkey,page=1),
                       'context_menu':[('搜索'+colorize_label(filtername, color='00FF00'), 
-                        'Container.update('+plugin.url_for('searchinit',stypes='pan,bt,jav',sstr=six.ensure_binary(filtername),modify='1',otherargs='{}')+')',)]
+                        'Container.update('+plugin.url_for('searchinit',stypes='pan,bt,jav',sstr=comm.ensure_binary(filtername),modify='1',otherargs='{}')+')',)]
                       })
     releech='"genre"><a\x20href="%s/(?P<filter_type>[a-z]+?)/(?P<filter_key>[0-9a-z]+?)">(?P<filter_name>.*?)</a>'%(javbusurl[qbbb])
     releech='<a\x20href="%s/(?P<filter_type>[a-z]+?)/(?P<filter_key>[0-9a-z]+?)">(?P<filter_name>.*?)</a>'%(javbusurl[qbbb])
@@ -236,7 +211,7 @@ def javdetail(qbbb='qb',movieno='0',id='0',title='0'):
                 menus.append({'label':'%s:%s'%(filtertypename,filtername),
                       'path':plugin.url_for('javlist', qbbb=qbbb,filtertype=filtertype,filterkey=filterkey,page=1),
                        'context_menu':[('搜索'+colorize_label(filtername, color='00FF00'), 
-                        'Container.update('+plugin.url_for('searchinit',stypes='pan,bt,jav',sstr=six.ensure_binary(filtername),modify='1',otherargs='{}')+')',)]
+                        'Container.update('+plugin.url_for('searchinit',stypes='pan,bt,jav',sstr=comm.ensure_binary(filtername),modify='1',otherargs='{}')+')',)]
                       })
     releech='avatar-box.*?href="%s/star/(?P<starid>.*?)">.*?src="(?P<starimg>.*?)".*?<span>(?P<starname>.*?)</span>'%(javbusurl[qbbb])
     if qbbb=='om':
@@ -245,7 +220,7 @@ def javdetail(qbbb='qb',movieno='0',id='0',title='0'):
     for match in leech.finditer(rsp):
         context_menu_items=[]
         context_menu_items.append(('搜索'+colorize_label(match.group('starname'), color='00FF00'), 
-            'Container.update('+plugin.url_for('searchinit',stypes='pan,bt,jav',sstr=six.ensure_binary(match.group('starname')),modify='1',otherargs='{}')+')',))
+            'Container.update('+plugin.url_for('searchinit',stypes='pan,bt,jav',sstr=comm.ensure_binary(match.group('starname')),modify='1',otherargs='{}')+')',))
             
         listitem=ListItem(label='优优:%s'%(match.group('starname')),
                 thumbnail=parse.urljoin(javbusurl[qbbb],match.group('starimg')), 
@@ -305,11 +280,11 @@ def javdetail(qbbb='qb',movieno='0',id='0',title='0'):
     
     if movieid!='':
         menus.insert(1, {'label':'预告片',
-              'path': plugin.url_for('freepv', movieid=six.ensure_binary(movieid)), 
+              'path': plugin.url_for('freepv', movieid=comm.ensure_binary(movieid)), 
               'thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'movies.png') ),
               'is_playable':True, 
               'info_type':'video',
-              'info':{'title':six.ensure_text(title)}
+              'info':{'title':comm.ensure_text(title)}
               })
     comm.setViewCode='thumbnail'
     return menus
@@ -320,7 +295,7 @@ def freepv(movieid=''):
     subpath=xbmc.translatePath( os.path.join( __cwd__, 'sample.m3u8') )
     
     if movieid[0:3]=='bb,':
-        (bb,studio,movid)=six.ensure_text(movieid).split(',')
+        (bb,studio,movid)=comm.ensure_text(movieid).split(',')
         
         if studio=='HEYZO':
             '''
@@ -455,7 +430,7 @@ def javlist(qbbb='qb',filtertype='0',filterkey='0',page=1):
             coverimg=thumbimg.replace('thumb','cover').replace('.jpg','_b.jpg')
             listitem=ListItem(label='[[COLOR FFFFFF00]%s[/COLOR]]%s(%s)'%(match.group('id'), match.group('title'), match.group('date')),
                     thumbnail=thumbimg, path= plugin.url_for('javdetail',qbbb=qbbb, movieno=movieno,id=match.group('id'),
-                    title=six.ensure_binary(match.group('title'))),)
+                    title=comm.ensure_binary(match.group('title'))),)
             listitem.set_property("Fanart_Image", coverimg)
             #listitem.set_property("Landscape_Image", match.group('imageurl'))
             #listitem.set_property("Poster_Image", match.group('imageurl'))
@@ -496,7 +471,7 @@ def javstarlist(qbbb='qb',page=1):
         for match in leech.finditer(rsp):
             context_menu_items=[]
             context_menu_items.append(('搜索'+colorize_label(match.group('starname'), color='00FF00'), 
-                'Container.update('+plugin.url_for('searchinit',stypes='pan,bt',sstr=six.ensure_binary(match.group('starname')),modify='1',otherargs='{}')+')',))
+                'Container.update('+plugin.url_for('searchinit',stypes='pan,bt',sstr=comm.ensure_binary(match.group('starname')),modify='1',otherargs='{}')+')',))
                 
             listitem=ListItem(label='优优:%s'%(match.group('starname')),
                     thumbnail=parse.urljoin(javbusurl[qbbb],match.group('starimg')), path= plugin.url_for('javlist', qbbb=qbbb,filtertype='star',filterkey=match.group('starid'),page=1),)
@@ -555,7 +530,7 @@ def javgernefilter(qbbb='qb',filterkey='-'):
                       # })
             sel = dialog.select(genregroup, genregrouplist)
             menus.insert(0, {'label': '标签:[COLOR FFFF3333]%s[/COLOR]'%(tags),
-                'path': plugin.url_for('dbmovie',tags=six.ensure_binary(tags2),sort=sort,page='0',addtag='1',scorerange=scorerange,year_range=year_range)})
+                'path': plugin.url_for('dbmovie',tags=comm.ensure_binary(tags2),sort=sort,page='0',addtag='1',scorerange=scorerange,year_range=year_range)})
             return menus
     except:
         notify('类型列表获取失败')
