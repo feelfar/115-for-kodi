@@ -610,7 +610,7 @@ def dbactor(sstr,sort='time',page=0):
         m = re.search("\x22count\x22.*?(?P<count>[0-9]+)", rsp, re.DOTALL)
         if m:
             count =int( m.group('count'))
-            totalpage=int((count-1)/30)
+            totalpage=int((count-1)/10)
             if int(page)<totalpage:
                 menus.append({'label':'下一页','thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'nextpage.png') ),
                         'path':  plugin.url_for('dbactor',sstr=comm.ensure_binary(sstr),sort=sort,page=int(page)+1)})
