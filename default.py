@@ -426,7 +426,7 @@ class api_115(object):
         if data['state'] and data['data']: 
             curtime = int(time.time())
             for note in data['data']:
-                if curtime > int(note['create_time'])+60*3600:
+                if curtime > int(note['create_time'])+6*3600:
                     nidolds+=note['nid']+','
                 else:
                     if note['title']==pc:
