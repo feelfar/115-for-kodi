@@ -294,19 +294,20 @@ class api_115(object):
             if match:
                 file_label=match.group('tag')
             if file_label:
-                data=parse.urlencode(encode_obj({'file_label': file_label,'cid':cid,'aid':'1','limit':str(pageitem),
+                data=parse.urlencode(encode_obj({'file_label': file_label,'cid':cid,'aid':'1','limit':str(pageitem),'fc_mix':'1',
                             'o':sorttype,'asc':sortasc,'offset':str(offset),'format':'json','date':'','pick_code':'','type':typefilter,'source':''}))
             else:
-                data=parse.urlencode(encode_obj({'search_value': search_value,'cid':cid,'aid':'1','limit':str(pageitem),
+                data=parse.urlencode(encode_obj({'search_value': search_value,'cid':cid,'aid':'1','limit':str(pageitem),'fc_mix':'1',
                             'o':sorttype,'asc':sortasc,'offset':str(offset),'format':'json','date':'','pick_code':'','type':typefilter,'source':''}))
-            data=self.urlopen('http://web.api.115.com/files/search?'+data)
+            data=self.urlopen('http://webapi.115.com/files/search?'+data)
         else:
-            data = parse.urlencode(encode_obj({'aid': '1','cid':cid,'limit':pageitem,'offset':offset,'type':typefilter,'star':star,'custom_order':'2',
+            self.urlopen('https://webapi.115.com/files/order',data=parse.urlencode(encode_obj({'file_id':cid,'user_order':sorttype,'user_asc':sortasc,'fc_mix':'1'})))
+            data = parse.urlencode(encode_obj({'aid': '1','cid':cid,'limit':pageitem,'offset':offset,'type':typefilter,'star':star,'natsort':'1','fc_mix':'1',
                                 'o':sorttype,'asc':sortasc,'nf':nf,'show_dir':'1','format':'json','_':str(int(time.time()))}))
             if sorttype=='file_name':
                 data=self.urlopen('http://aps.115.com/natsort/files.php?'+data)
             else:
-                data=self.urlopen('http://web.api.115.com/files?'+data)
+                data=self.urlopen('http://webapi.115.com/files?'+data)
             #plugin.log.error(data)
         return self.jsonload(data)
     
@@ -1500,7 +1501,7 @@ def move(fid,filename):
         ids['movepid']=pid
 
 def getfilelistdata(cid,offset,star,typefilter='0',searchstr='0',nf='0'):
-    sorttype ='user_ptime'
+    sorttype ='user_utime'
     if cursorttype['s']=='2' or cursorttype['s']=='3':
         sorttype ='file_size'
     if cursorttype['s']=='4' or cursorttype['s']=='5':
