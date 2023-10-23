@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <addon id="plugin.video.115"
 name="115网盘"
-version="0.3.2.7"
+version="0.3.3.0"
 provider-name="yxblog, 2020-12 modify by feelfar">
 
 <requires>

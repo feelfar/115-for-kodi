@@ -100,7 +100,7 @@ class api_115(object):
             self.opener = None
         self.headers = {
             'User-Agent': defaultUserAgent,
-            'Accept-encoding': 'gzip,deflate',
+            'Accept-encoding': 'gzip,deflate,br',
         }
        
 
@@ -221,25 +221,35 @@ class api_115(object):
             return {'state':False, 'message':'Login Error'}
         
         
-    def urlopen(self, url,justrsp=False, binary=False, **args):
+    def urlopen(self, url,justrsp=False, binary=False,domain='115.com', **args):
         if self.opener == None: return '{"state":False, "error":"please Login"}'
         #plugin.log.error(url)
+        headers=self.headers.copy()
+        if 'userAgent' in args:
+            headers['User-Agent']=args['userAgent']
+            del args['userAgent']
         if 'cookie' in args:
-            cookiename,cookievalue=args['cookie'].split('=')
-            cook=self.make_cookie(cookiename, cookievalue, '115.com')
-            self.cookiejar.set_cookie(cook)
+            semicolon_split = args['cookie'].split(";")
+            for pair in semicolon_split:
+                equal_split = pair.split("=")
+                # 如果分割后不是两个字符，则跳过该组合
+                if len(equal_split) != 2:
+                    continue
+                #cookiename,cookievalue=pair.split('=')
+                cook=self.make_cookie(equal_split[0], equal_split[1], domain)
+                self.cookiejar.set_cookie(cook)
             del args['cookie']
             
         if 'data' in args and type(args['data']) == dict:
             args['data'] = json.dumps(args['data'])
-            self.headers['Content-Type'] = 'application/json'
+            headers['Content-Type'] = 'application/json'
         else:
-            self.headers['Content-Type'] = 'application/x-www-form-urlencoded'
+            headers['Content-Type'] = 'application/x-www-form-urlencoded'
         try:
             for key, value in args.items():
                 if type(value) == str:
                     args[key]=value.encode()
-            headers=self.headers.copy()
+            
             
             if url.find('|')>0:
                 url,head=url.split('|')
@@ -256,6 +266,9 @@ class api_115(object):
                 for key,value in rsp.headers.items():
                     if key.lower()=='set-cookie':
                         downcookies = re.findall(r'(?:[0-9abcdef]{20,}|acw_tc)\s*\x3D\s*[0-9abcdef]{20,}', value, re.DOTALL | re.MULTILINE)
+                        for downcook in downcookies:
+                            self.downcookie+=downcook+';'
+                        downcookies2 = re.findall(r'(?:[0-9abcdef]{20,}|acw_tc)\s*\x3D\s*[0-9abcdef]{20,}', value, re.DOTALL | re.MULTILINE)
                         for downcook in downcookies:
                             self.downcookie+=downcook+';'
             
@@ -745,9 +758,9 @@ class api_115(object):
             rest=None
         )
     
-    def getcookieatt(self, cookiename):
+    def getcookieatt(self, cookiename,domain='115.com'):
         for cookie in self.cookiejar:
-            if cookie.domain.find('115.')>=0:
+            if cookie.domain.find(domain)>=0:
                 if cookie.name==cookiename:
                     return cookie.value
         return ''
@@ -1703,6 +1716,21 @@ def getchangeserver():
         changeserver = selectservers[serverchange-6]
     return changeserver
     
+def convert_relative_to_absolute(m3u8_content, base_url):
+    lines = m3u8_content.split('\n')
+    absolute_lines = []
+
+    for line in lines:
+        if line.startswith('#') or line.strip() == '':
+            # Skip comments and empty lines
+            absolute_lines.append(line)
+        else:
+            absolute_url = parse.urljoin(base_url, line)
+            m3uurl='/mp2t?'+parse.urlencode(encode_obj({'url': absolute_url}))
+            absolute_lines.append(m3uurl)
+
+    return '\n'.join(absolute_lines)
+    
 def getvideourl(pc,fid,stm,name=''):
     videourl=''
     if stm=='99':
@@ -1714,14 +1742,21 @@ def getvideourl(pc,fid,stm,name=''):
         playmode=int(plugin.get_setting('playmode'))
         videourl=get_file_download_url(pc,fid,playmode=playmode,changeserver=changeserver,name=parse.quote_plus(name))
     else:
-        datam=xl.urlopen('http://115.com/api/video/m3u8/'+pc+'.m3u8')
+        uid = xl.getcookieatt('UID')
+        cid = xl.getcookieatt('CID')
+        seid = xl.getcookieatt('SEID')
+        
+        datam=xl.urlopen('https://v.anxia.com/site/api/video/m3u8/%s.m3u8'%(pc),domain='anxia.com',cookie='UID='+uid+'; CID='+cid+'; SEID='+seid+';',userAgent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36')
+        #datam=xl.urlopen('https://v.115.com/site/api/video/m3u8/%s.m3u8'%(pc))
+        #datam=xl.urlopen('https://115.com/api/video/m3u8/'+pc+'.m3u8')
         m3u8urls=[]
         for match in re.finditer("BANDWIDTH=(?P<bandwidth>.*?)\x2C.*?(?P<url>http.*?)\r", datam, re.IGNORECASE | re.DOTALL):
             m3u8urls.append((int(match.group('bandwidth')),match.group('url')))
         m3u8urls.sort(key=lambda x:x[0],reverse=True)
         for url in m3u8urls:
             if url[0]<=int(stm):
-                videourl= url[1]
+                videourl = 'http://%s/covm3u?%s' % (plugin.get_setting('proxyserver'),parse.urlencode(encode_obj({'url': url[1]})))
+                #videourl = url[1]
                 break
     return videourl
 
@@ -1777,7 +1812,7 @@ def play(pc,name,iso):
         try:
             uid = xl.getcookieatt('UID')
             uid = uid[:uid.index('_')]
-            data=xl.urlopen('http://web.api.115.com/movies/subtitle?pickcode='+pc)
+            data=xl.urlopen('https://web.api.115.com/movies/subtitle?pickcode='+pc)
             data=json.loads(data[data.index('{'):])
             if data['state']:
                 for s in data['data']:
