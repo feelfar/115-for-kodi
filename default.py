@@ -47,7 +47,7 @@ import magnet
 import douban
 import javbus
 
-defaultUserAgent='Mozilla/5.0;  Mac  OS  X/10.15.7;  115Desktop/2.0.1.7'
+defaultUserAgent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36 115Browser/27.0.3.7'
 xbmcplugin.setContent(int(sys.argv[1]),'movies')
 class QRShower(xbmcgui.WindowDialog):
     def __init__(self):
