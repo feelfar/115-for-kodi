@@ -53,7 +53,7 @@ def _http(url, data=None,referer=None,cookie=None):
     for i in range(1,5):
         try:
             req = request.Request(url)
-            req.add_header('User-Agent', 'Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Trident/5.0)')
+            req.add_header('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 Edg/131.0.0.0')
             req.add_header('Accept-encoding', 'gzip,deflate')
             req.add_header('Accept-Language', 'zh-cn')
             if cookie:
@@ -83,10 +83,12 @@ def _http(url, data=None,referer=None,cookie=None):
     
     return reponse
 
-def url_is_alive(url):
+def url_is_alive(url, referer=None):
     try:
         req = request.Request(url)
         req.add_header('User-Agent', 'Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Trident/5.0)')
+        if referer:
+            req.add_header('Referer', referer)
         req.get_method = lambda : 'HEAD'
         response = request.urlopen(req,timeout=10)
         return True

@@ -70,7 +70,7 @@ def getjavbusurl():
     javbusurl['qb']=url
     javbusurl['bb']=url+'/uncensored'
     if not 'om' in javbusurl.raw_dict():
-        javbusurl['om']='http://www.javbus.red'
+        javbusurl['om']='http://www.javbus.hair'
     if url_is_alive(url):
         rsp=_http(url)
         match = re.search(r"href\x3D[\x22\x27](?P<url>(?:http|https)\x3A[\w\x2E\x2F]*?)[\x22\x27]\x3E歐美", rsp, re.IGNORECASE | re.DOTALL)
@@ -158,10 +158,14 @@ def javdetail(qbbb='qb',movieno='0',id='0',title='0'):
                 matchmovid2 = re.search(r'cover/(?P<movid2>.+?)_', match.group('mainimg'), re.DOTALL | re.MULTILINE)
                 if matchmovid2:
                     movieid2 = matchmovid2.group('movid2')
-        
+        idtemp=movieno.replace('-', '00').lower()
+        thumbimg="https://pics.dmm.co.jp/digital/video/"+idtemp+'/'+idtemp+'ps.jpg'
+        xbmc.log(msg=thumbimg,level=xbmc.LOGERROR)
+        #coverimg=thumbimg.replace('thumb','cover').replace('.jpg','_b.jpg')
+        coverimg="https://pics.dmm.co.jp/digital/video/"+idtemp+'/'+idtemp+'pl.jpg'
         menus.append({'label':'封面图',
-              'path': plugin.url_for('showpic', imageurl=parse.urljoin(javbusurl[qbbb],match.group('mainimg'))),
-              'thumbnail':parse.urljoin(javbusurl[qbbb],match.group('mainimg')),})
+              'path': plugin.url_for('showpic', imageurl=coverimg),
+              'thumbnail':thumbimg,})
         comm.moviepoint['group']='javbus'
         comm.moviepoint['title']=title
         comm.moviepoint['thumbnail']=parse.urljoin(javbusurl[qbbb],match.group('mainimg'))
@@ -241,9 +245,11 @@ def javdetail(qbbb='qb',movieno='0',id='0',title='0'):
                 matchmovid = re.search(r'video/(?P<movieid>.*?)/', match.group('sampleimg'), re.DOTALL | re.MULTILINE)
                 if matchmovid:
                     movieid = matchmovid.group('movieid')
+        sampleimg=match.group('sampleimg')
+        thumbimg=sampleimg.replace('jp-','-')
         menus.append({'label':'样品图',
-              'path': plugin.url_for('showpic', imageurl=parse.urljoin(javbusurl[qbbb],match.group('sampleimg'))),
-              'thumbnail':parse.urljoin(javbusurl[qbbb],match.group('thumbimg')),})
+              'path': plugin.url_for('showpic', imageurl=sampleimg),
+              'thumbnail':thumbimg,})
     #notify(movieid2)		  
     if movieid=='' and qbbb=='qb' and movieid2!='':
         cururl='https://javzoo.com'
@@ -344,18 +350,29 @@ def freepv(movieid=''):
         #	videourl=''
 
     else:
+        '''
         for mid in [movieid,movieid[0:-5]+movieid[-3:]]:
             id1c=mid[0:1]
             id3c=mid[0:3]
-            for stm in ['_mhb_w','_dmb_w','_dmb_s','_dm_w','_dm_s','_sm_w','_sm_s']:
-                videourltemp='https://cc3001.dmm.co.jp/hlsvideo/freepv/%s/%s/%s/%s%s.m3u8'%(id1c,id3c,mid,mid,stm)
-                #xbmc.log(videourltemp)
-                if url_is_alive(videourltemp):
+            for stm in ['mhb','_mhb_w','_dmb_w','_dmb_s','_dm_w','_dm_s','_sm_w','_sm_s']:
+            
+                videourltemp='https://pv3001.dmm.co.jp/litevideo/freepv/%s/%s/%s/%s%s.mp4'%(id1c,id3c,mid,mid,stm)
+                xbmc.log(videourltemp)
+                if url_is_alive(videourltemp,referer='https://www.dmm.co.jp'):
                     videourl=videourltemp
                     break
             if videourl!='':
                 break;
-    
+        '''
+        for mid in [movieid,movieid[0:-5]+movieid[-3:]]:
+            id1c=mid[0:1]
+            id3c=mid[0:3]
+            
+            videourltemp='https://media.javtrailers.com/hlsvideo/freepv/%s/%s/%s/%smmb.m3u8'%(id1c,id3c,mid,mid)
+            xbmc.log(videourltemp)
+            if url_is_alive(videourltemp):
+                videourl=videourltemp
+                break
     if videourl!='':
         plugin.set_resolved_url(videourl)
     else:
@@ -426,8 +443,12 @@ def javlist(qbbb='qb',filtertype='0',filterkey='0',page=1):
             context_menu_items=[]
             context_menu_items.append(('搜索'+colorize_label(match.group('id'), color='00FF00'), 
                 'Container.update('+plugin.url_for('searchinit',stypes='pan,bt',sstr=match.group('id'),modify='1',otherargs='{}')+')',))
-            thumbimg=parse.urljoin(javbusurl[qbbb],match.group('imageurl'))
-            coverimg=thumbimg.replace('thumb','cover').replace('.jpg','_b.jpg')
+            #thumbimg=parse.urljoin(javbusurl[qbbb],match.group('imageurl'))
+            idtemp=match.group('id').replace('-', '00').lower()
+            thumbimg="https://pics.dmm.co.jp/digital/video/"+idtemp+'/'+idtemp+'ps.jpg'
+            #xbmc.log(msg=thumbimg,level=xbmc.LOGERROR)
+            #coverimg=thumbimg.replace('thumb','cover').replace('.jpg','_b.jpg')
+            coverimg="https://pics.dmm.co.jp/digital/video/"+idtemp+'/'+idtemp+'pl.jpg'
             listitem=ListItem(label='[[COLOR FFFFFF00]%s[/COLOR]]%s(%s)'%(match.group('id'), match.group('title'), match.group('date')),
                     thumbnail=thumbimg, path= plugin.url_for('javdetail',qbbb=qbbb, movieno=movieno,id=match.group('id'),
                     title=comm.ensure_binary(match.group('title'))),)

@@ -176,7 +176,7 @@ def dbsubject(subject):
                     names.append(othtitle.strip())
         celes=[]
                     
-        rtxt=r"avatar[^\n]*?background\x2Dimage[^\n]*?url\x28(?P<img>[^\x2C\s]*?)\x29\x22\x3E.*?celebrity\x2F(?P<id>[0-9]+)\x2F.*?name\x22\x3E(?P<name>.*?)\x3C\x2Fa\x3E.*?title\x3D\x22(?P<role>.*?)\x22\x3E"
+        rtxt=r"avatar[^\n]*?background\x2Dimage[^\n]*?url\x28(?P<img>[^\x2C\s]*?)\x29\x22\x3E.*?personage\x2F(?P<id>[0-9]+)\x2F.*?name\x22\x3E(?P<name>.*?)\x3C\x2Fa\x3E.*?title\x3D\x22(?P<role>.*?)\x22\x3E"
         for m in re.finditer(rtxt, rsp, re.DOTALL):
              celes.append({'id':m.group('id'),'name':m.group('name'),'img':m.group('img'),'role':m.group('role'),})
              
@@ -518,10 +518,10 @@ def dbsearch(sstr, page=0):
 
 @plugin.route('/celephotos/<cele>/<page>')
 def celephotos(cele,page=0):
-    url='https://movie.douban.com/celebrity/%s/photos/?start=%d&sortby=like&size=a&subtype=a'%(cele,int(page)*30)
+    url='https://www.douban.com/personage/%s/photos/?start=%d&sortby=like&size=a&subtype=a'%(cele,int(page)*30)
     #plugin.log.error(url)
     rsp = _http(url,referer='https://www.douban.com/link2/')
-    rtxt=r'img\s+src\x3D\x22(?P<imgurl>[^\s]*?)\x22.*?\x22name\x22\x3E(?P<imgname>.*?)\x3C'
+    rtxt=r'\x3E\x3Cimg\s+src\x3D\x22(?P<imgurl>[^\s]*?)\x22.*?\x22name\x22\x3E\n(?P<imgname>[^\n]*?)\n\s*\x3C'
     menus=[]
     for photo in re.finditer(rtxt, rsp, re.DOTALL):
         resource_url=''
@@ -547,35 +547,22 @@ def celephotos(cele,page=0):
     comm.setViewCode='thumbnail'
     return menus
     
-url = 'https://movie.douban.com/celebrity/1274761/photos/'
+url = 'https://www.douban.com/celebrity/1274761/photos/'
 @plugin.route('/dbactor/<sstr>/<sort>/<page>')
 def dbactor(sstr,sort='time',page=0):
     try:
-        url = 'https://movie.douban.com/celebrity/%s/' % (sstr)
+        url = 'https://www.douban.com/personage/%s/' % (sstr)
         rsp = _http(url)
         celename=celeinfo=celeimg=summary=''
-        m = re.search(r"\x22nbg\x22\s+title\x3D\x22(?P<celename>.*?)\x22.*?src\x3D\x22(?P<celeimg>.*?)\x22", rsp, re.DOTALL)
+        m = re.search(r"og\x3Atitle\x22\s+content\x3D\x22(?P<celename>.*?)\x22.*?og\x3Adescription\x22\s+content\x3D\x22(?P<celeinfo>.*?)\x22.*?og\x3Aimage\x22\s+content\x3D\x22(?P<celeimg>.*?)\x22", rsp, re.DOTALL)
         if m:
             celename = m.group("celename")
+            celeinfo= m.group("celeinfo")
             celeimg= m.group("celeimg")
-        rtxt = r'(?P<celeinfo>\x3Cli\x3E\s+\x3Cspan\x3E性别.+?)\x3C\x2Ful\x3E'
-        m = re.search(rtxt, rsp, re.DOTALL)
-        if m:
-            celeinfo=m.group('celeinfo')
-            celeinfo=re.sub(r'\x3C.*?\x3E','',celeinfo)
-            celeinfo=re.sub(r'\x3A\s+','\x3A',celeinfo, re.DOTALL)
-            celeinfo=celeinfo.replace(' ','')
-            celeinfo=re.sub(r'\s+','\r\n',celeinfo, re.DOTALL)
-            #plugin.log.error(celename)
-        m = re.search(r'影人简介.*?\x22bd\x22\x3E(?P<summary>.*?)\x3C', rsp, re.DOTALL)
-        if m:
-            summary = m.group("summary")
-        m = re.search(r'\x22all\s+hidden\x22\x3E(?P<summary>.*?)\x3C', rsp, re.DOTALL)
-        if m:
-            summary = m.group("summary")
+
         menus =[]
         menus.append({'label':'简介：[COLOR FFFF2222]%s[/COLOR]'%celename,
-                    'path':  plugin.url_for('dbsummary', summary=comm.ensure_binary(celename+celeinfo+summary)),
+                    'path':  plugin.url_for('dbsummary', summary=comm.ensure_binary(celeinfo)),
                     'thumbnail':celeimg})
         menus.append({'label':comm.colorize_label('影人图片',None,color='32FF94') ,
                     'path':  plugin.url_for('celephotos', cele=comm.ensure_binary(sstr),page=0),
@@ -586,12 +573,12 @@ def dbactor(sstr,sort='time',page=0):
         else:
             menus.append({'label': '按[COLOR FFFF3333]时间[/COLOR]排序',
                 'path': plugin.url_for('dbactor',sstr=comm.ensure_binary(sstr),sort='time',page='0')})
-        url = 'https://movie.douban.com/celebrity/%s/movies?start=%d&format=pic&sortby=%s&' % (sstr,int(page)*10,sort)
+        url = 'https://www.douban.com/personage/%s/creations?start=%d&format=pic&sortby=%s&' % (sstr,int(page)*10,sort)
         rsp = _http(url)
-        rtxt=r'subject\x2F(?P<id>[0-9]+)\x2F.*?img\ssrc\x3D\x22(?P<imgurl>.*?)\x22.*?title\x3D\x22(?P<title>.*?)\x22.*?\x22star\s.*?span\x3E(?P<rate>.*?)\x3C\x2Fdiv'
+        rtxt=r'subject\x2F(?P<id>[0-9]+)\x2F.*?img\ssrc\x3D\x22(?P<imgurl>.*?)\x22\s+alt\x3D\x22(?P<title>.*?)\x22.*?\x22rating\x22.*?span\x3E(?P<rate>.*?)\x3C\x2Fdiv'
         for sub in re.finditer(rtxt, rsp, re.DOTALL):
             rate = ''
-            mrate=re.search(r'\x3Cspan\x3E(?P<rate>[\x2E0-9]+?)\x3C',sub.group('rate').strip(), re.DOTALL)
+            mrate=re.search(r'\x3Cspan\x3E(?P<rate>[\x2E0-9]+?)\s*?\x2F',sub.group('rate').strip(), re.DOTALL)
             if mrate:
                 rate=mrate.group('rate')
             
@@ -607,16 +594,14 @@ def dbactor(sstr,sort='time',page=0):
                 listitem.add_context_menu_items(context_menu_items)
                 menus.append(listitem)
         
-        m = re.search("\x22count\x22.*?(?P<count>[0-9]+)", rsp, re.DOTALL)
+        m = re.search("data-total-page\x3D\x22(?P<totalpage>[0-9]+?)\x22", rsp, re.DOTALL)
         if m:
-            count =int( m.group('count'))
-            totalpage=int((count-1)/10)
-            if int(page)<totalpage:
+            totalpage =int( m.group('totalpage'))
+            if int(page)<totalpage-1:
                 menus.append({'label':'下一页','thumbnail':xbmc.translatePath( os.path.join( IMAGES_PATH, 'nextpage.png') ),
                         'path':  plugin.url_for('dbactor',sstr=comm.ensure_binary(sstr),sort=sort,page=int(page)+1)})
         
         comm.setViewCode='thumbnail'
-        return menus
         return menus
         
     except Exception as e:

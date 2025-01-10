@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 #VERSION: 1.00
-
 from  __future__  import unicode_literals
 import sys 
 sys.path.append("..")
@@ -13,37 +12,31 @@ import comm
 from urllib import parse
 plugin = comm.plugin
 
-class ciligogo(object):
-    url = 'http://www.btmovi.org'
-    name = 'ciligogo'
+class clzhizhu(object):
+    url = 'https://clzhizhu.com/'
+    name = 'clzhizhu'
     support_sort=['relevance','addtime','size','popular']
-    page_result_count=10;
+    page_result_count=20;
     supported_categories = {'all': ''}
     
     def __init__(self):
         pass
         
     def getsearchurl(self):
+        magneturls=plugin.get_storage('magneturls')
         try:
-            magneturls=plugin.get_storage('magneturls')
-            magneturls[self.name]= 'http://www.btmovi.org'
-            magneturls.sync()
-            return
-            
-            jubturl='https://jubt.gq/'
-            rsp = _http('https://jubt.gitlab.io/home/')
-            for match in re.finditer(r"\x3Ctd\x3E\s*\x3Ca\s+href\x3D[\x22\x27](?P<url>.*?)[\x22\x27]", rsp, re.IGNORECASE | re.DOTALL):
-                if url_is_alive(match.group('url')):
-                    jubturl=match.group('url')
-                    break
-            rsp= _http(jubturl+'/cn/index.html')
-            match = re.search(r"window\x2Eopen\x28(?:\x26\x2334\x3B)?(?P<url>(?:http|https)\x3A[\w\x2E\x2F]*?)(?:\x26\x2334\x3B)?\x2C(?:\x26\x2334\x3B)?(?:(?!window).)*?strong\x3E磁力蜘蛛\s*\x7C.*?\x3C\x2Fdiv\x3E", rsp, re.IGNORECASE | re.DOTALL)
+            rsp= _http('https://clzhizhu.com/')
+            #xbmc.log(msg=rsp,level=xbmc.LOGERROR)
+            match = re.search(r'clickable-text\x22\x3E(?P<url>.*?)\x3C\x2Fdiv', rsp, re.IGNORECASE | re.DOTALL)
             if match:
-                magneturls[self.name] = [match.group('url').strip().rstrip('/')]
+                xbmc.log(msg='https://' + [match.group('url').strip().rstrip('/')],level=xbmc.LOGERROR)
+                magneturls[self.name] = 'https://' + [match.group('url')[0].strip().rstrip('/')]
             else:
-                magneturls[self.name]= 'http://www.btmovi.org'
+                magneturls[self.name]= 'https://' + 'www.clzz1067.shop'
             magneturls.sync()
         except:
+            magneturls[self.name]= 'https://' + 'www.clzz1067.shop'
+            magneturls.sync()
             xbmc.log(msg=format_exc(),level=xbmc.LOGERROR)
             
     def search(self, what, cat='all',sorttype='relevance',page='1'):
@@ -52,22 +45,22 @@ class ciligogo(object):
         result['list']=[]
         result['sorttype']=sorttype
         
-        if sorttype=='addtime': sorttype='time'
-        elif sorttype=='size': sorttype='size'
-        elif sorttype=='relevance': sorttype='rel'
-        else : sorttype='hits'
+        if sorttype=='addtime': sorttype='2'
+        elif sorttype=='size': sorttype='1'
+        elif sorttype=='popular': sorttype='3'
+        else : sorttype='0'
         magneturls=plugin.get_storage('magneturls')
         searchurl=magneturls[self.name]
-        searchurl='%s/so/%s_%s_%s.html'%(searchurl,parse.quote(what),str(sorttype),str(int(page)))
+        searchurl='%s/search-%s-0-%s-%s.html'%(searchurl,parse.quote(what),str(sorttype),str(int(page)))
         try:
             pageresult = _http(searchurl)
-            rmain=r'\x2Fbt\x2F(?P<magnet>[a-z0-9]{40})\x2Ehtml.*?[\x22\x27]\x3E(?P<title>.*?)\x3C\x2Fa\x3E.*?创建时间.*?\x3Cb\x3E(?P<createtime>.*?)\x3C\x2Fb\x3E.*?文件大小.*?\x3E(?P<filesize>.*?)\x3C\x2Fb\x3E'
+            rmain=r'\x2Fhash\x2F(?P<magnet>[a-z0-9]{40})\x2Ehtml.*?[\x22\x27]\x3E(?P<title>.*?)\x3C\x2Fa\x3E.*?添加時間\x3A(?P<createtime>.*?)\x3C\x2Fspan.*?大小\x3A(?P<filesize>.*?)\x3C\x2Fspan'
             reobj = re.compile(rmain, re.IGNORECASE | re.DOTALL)
             for match in reobj.finditer(pageresult):
                 
-                title=match.group('title').replace('<em>','').replace('</em>','').strip()
-                filesize=match.group('filesize').strip()
-                createtime=match.group('createtime').strip()
+                title = re.sub(r'<[^>]*>','',match.group('title')).strip()
+                filesize=re.sub(r'<[^>]*>','',match.group('filesize')).strip()
+                createtime=re.sub(r'<[^>]*>','',match.group('createtime')).strip()
                 
                 magnet=r'magnet:?xt=urn:btih:'+match.group('magnet')
                 
